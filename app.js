@@ -437,14 +437,23 @@ function syncSeriesFilterOptions() {
   seriesFilter.value = nextValue;
 }
 
+function formatLoadedFileSummary(datasets = state.datasets) {
+  if (!datasets.length) return "なし";
+  if (datasets.length === 1) return datasets[0].fileName;
+  return `${datasets[0].fileName} ほか ${datasets.length - 1} 件`;
+}
+
+function formatLoadedFileTooltip(datasets = state.datasets) {
+  return datasets.map((dataset) => dataset.fileName).join(", ");
+}
+
 function updateSummary() {
   const datasets = getFilteredDatasets();
   const allVisiblePoints = getVisiblePoints();
 
   loadedCountEl.textContent = String(state.datasets.length);
-  fileNameEl.textContent = state.datasets.length
-    ? state.datasets.map((dataset) => dataset.fileName).join(", ")
-    : "なし";
+  fileNameEl.textContent = formatLoadedFileSummary(state.datasets);
+  fileNameEl.title = state.datasets.length ? formatLoadedFileTooltip(state.datasets) : "";
   pointCountEl.textContent = String(allVisiblePoints.length);
   viewModeLabelEl.textContent = state.view.selectedSeries === "all"
     ? "全系列"

@@ -233,6 +233,13 @@ select {
 
 .status-box p {
   margin: 0;
+  min-width: 0;
+}
+
+.status-box span,
+.status-box strong {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .series-list {
@@ -248,6 +255,7 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
   padding: 10px 12px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--panel) 90%, transparent 10%);
@@ -283,6 +291,10 @@ select {
 .muted,
 .chart-hint {
   color: var(--muted);
+}
+
+.series-meta {
+  flex: 0 0 auto;
 }
 
 .inline-hint,
