@@ -22,7 +22,6 @@ const clearFilesBtn = document.getElementById("clearFilesBtn");
 const downloadPngBtn = document.getElementById("downloadPngBtn");
 const xLabelInput = document.getElementById("xLabelInput");
 const yLabelInput = document.getElementById("yLabelInput");
-const titleInput = document.getElementById("titleInput");
 const fileNameEl = document.getElementById("fileName");
 const pointCountEl = document.getElementById("pointCount");
 const xRangeEl = document.getElementById("xRange");
@@ -162,7 +161,7 @@ function drawPlot() {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  const margin = { top: 90, right: 48, bottom: 85, left: 95 };
+  const margin = { top: 48, right: 48, bottom: 85, left: 95 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
@@ -254,13 +253,13 @@ function drawPlot() {
   ctx.fillStyle = "#0f172a";
   ctx.font = `600 22px ${CANVAS_FONT_STACK}`;
   ctx.textAlign = "center";
-  ctx.fillText(xLabelInput.value || "X", width / 2, height - 24);
+  ctx.fillText(xLabelSelect.value || "Raman shift (cm−1)", width / 2, height - 24);
 
   ctx.save();
   ctx.translate(26, height / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
-  ctx.fillText(yLabelInput.value || "Intensity", 0, 0);
+  ctx.fillText(yLabelSelect.value || "Intensity (counts)", 0, 0);
   ctx.restore();
 }
 
@@ -349,15 +348,17 @@ clearFilesBtn.addEventListener("click", () => {
 
 downloadPngBtn.addEventListener("click", () => {
   const link = document.createElement("a");
-  const safeTitle = (titleInput.value || "plot").replace(/[^a-z0-9-_]+/gi, "_");
+  const safeTitle = "plot";
   link.href = canvas.toDataURL("image/png");
   link.download = `${safeTitle}.png`;
   link.click();
 });
 
-[xLabelInput, yLabelInput, titleInput].forEach((input) => {
+[xLabelInput, yLabelInput].forEach((input) => {
   input.addEventListener("input", drawPlot);
 });
+
+titleInput.addEventListener("input", drawPlot);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
