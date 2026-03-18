@@ -4,82 +4,126 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f172a" />
-    <meta name="description" content="2列テキストファイルを読み込んでグラフ表示するPWA" />
+    <meta name="description" content="2列テキストファイルを読み込んで可視化・比較できるスペクトル向けPWA" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
-    <title>Text Plot PWA</title>
+    <title>Spectrum Plot PWA</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="hero">
       <div>
         <p class="eyebrow">PWA for spectroscopy text files</p>
-        <h1>テキストファイルからグラフを出力</h1>
+        <h1>スペクトルテキストを読み込んで比較・確認</h1>
         <p class="lead">
-          2列の数値データを含む .txt / .csv / .dat を読み込み、折れ線グラフとして表示します。
-          GitHub Pages でそのまま公開できます。
+          2列の数値データを含む .txt / .csv / .dat を読み込み、系列の比較・拡大確認・PNG保存まで
+          行える軽量なスペクトルビューアです。
         </p>
       </div>
     </header>
 
     <main class="layout">
       <section class="panel controls">
-        <h2>ファイル読み込み</h2>
-        <label class="dropzone" id="dropzone" for="fileInput">
-          <input id="fileInput" type="file" accept=".txt,.csv,.dat,text/plain" multiple />
-          <span class="dropzone-title">ここにファイルをドロップ</span>
-          <span class="dropzone-subtitle">複数ファイルをまとめて追加、またはクリックして選択</span>
-        </label>
+        <div class="section-stack">
+          <section class="workflow-section">
+            <h2>1. データを追加</h2>
+            <label class="dropzone" id="dropzone" for="fileInput">
+              <input id="fileInput" type="file" accept=".txt,.csv,.dat,text/plain" multiple />
+              <span class="dropzone-title">ここにファイルをドロップ</span>
+              <span class="dropzone-subtitle">複数ファイルをまとめて追加、またはクリックして選択</span>
+            </label>
+            <p class="hint inline-hint">
+              先頭2列の数値を自動認識します。空行やコメント行、文字を含むヘッダー行は自動で無視します。
+            </p>
 
-        <div class="button-row">
-          <button id="loadSampleBtn" type="button">同梱サンプルを追加</button>
-          <button id="clearFilesBtn" type="button" disabled>系列をクリア</button>
-          <button id="downloadPngBtn" type="button" disabled>PNGとして保存</button>
-        </div>
+            <div class="button-row">
+              <button id="loadSampleBtn" type="button">サンプルを追加</button>
+              <button id="clearFilesBtn" type="button" disabled>系列をクリア</button>
+              <button id="downloadPngBtn" type="button" disabled>PNGとして保存</button>
+            </div>
+          </section>
 
-        <div class="field-grid">
-          <label>
-            <span>X軸ラベル</span>
-            <select id="xLabelSelect">
-              <option value="Raman shift (cm−1)">Raman: Raman shift (cm−1)</option>
-              <option value="PL: Photon energy (eV)">PL: Photon energy (eV)</option>
-            </select>
-          </label>
-          <label>
-            <span>Y軸ラベル</span>
-            <select id="yLabelSelect">
-              <option value="Intensity (counts)">Intensity (counts)</option>
-              <option value="Intensity (cps)">Intensity (cps)</option>
-              <option value="Intensity (a.u.)">Intensity (a.u.)</option>
-            </select>
-          </label>
-        </div>
+          <section class="workflow-section">
+            <h2>2. 表示を調整</h2>
+            <div class="field-grid">
+              <label>
+                <span>タイトル</span>
+                <input id="titleInput" type="text" value="Spectrum" />
+              </label>
+              <label>
+                <span>X軸ラベル</span>
+                <select id="xLabelSelect">
+                  <option value="Raman shift (cm−1)">Raman shift (cm−1)</option>
+                  <option value="Absolute wavenumber (cm−1)">Absolute wavenumber (cm−1)</option>
+                  <option value="Photon energy (eV)">Photon energy (eV)</option>
+                  <option value="Wavelength (nm)">Wavelength (nm)</option>
+                </select>
+              </label>
+              <label>
+                <span>Y軸ラベル</span>
+                <select id="yLabelSelect">
+                  <option value="Intensity (counts)">Intensity (counts)</option>
+                  <option value="Intensity (cps)">Intensity (cps)</option>
+                  <option value="Intensity (a.u.)">Intensity (a.u.)</option>
+                </select>
+              </label>
+            </div>
+          </section>
 
-        <div class="status-box">
-          <p><strong>読み込みファイル:</strong> <span id="fileName">なし</span></p>
-          <p><strong>系列数:</strong> <span id="loadedCount">0</span></p>
-          <p><strong>合計データ点数:</strong> <span id="pointCount">0</span></p>
-          <p><strong>X範囲:</strong> <span id="xRange">-</span></p>
-          <p><strong>Y範囲:</strong> <span id="yRange">-</span></p>
-          <p class="hint">
-            先頭2列の数値を自動認識します。空行やコメント行、文字を含むヘッダー行は自動で無視します。
-            追加読込したファイルは色分けして同一グラフへ重ね描きします。
-          </p>
-          <ul id="seriesList" class="series-list">
-            <li class="muted">まだ系列がありません</li>
-          </ul>
+          <section class="workflow-section">
+            <h2>3. 状態を確認</h2>
+            <div class="status-box">
+              <div class="status-grid">
+                <p><strong>読み込みファイル:</strong> <span id="fileName">なし</span></p>
+                <p><strong>系列数:</strong> <span id="loadedCount">0</span></p>
+                <p><strong>合計データ点数:</strong> <span id="pointCount">0</span></p>
+                <p><strong>X範囲:</strong> <span id="xRange">-</span></p>
+                <p><strong>Y範囲:</strong> <span id="yRange">-</span></p>
+                <p><strong>表示モード:</strong> <span id="viewModeLabel">全系列</span></p>
+                <p><strong>最大ピーク位置:</strong> <span id="peakX">-</span></p>
+                <p><strong>推定X刻み:</strong> <span id="xStep">-</span></p>
+              </div>
+              <p class="hint">
+                系列一覧から表示対象を切り替え、グラフ上ではドラッグでX方向をズームできます。
+              </p>
+              <ul id="seriesList" class="series-list">
+                <li class="muted">まだ系列がありません</li>
+              </ul>
+            </div>
+          </section>
         </div>
       </section>
 
       <section class="panel chart-panel">
+        <div class="chart-toolbar">
+          <div class="toolbar-group">
+            <label>
+              <span>Spectrum</span>
+              <select id="seriesFilter">
+                <option value="all">すべての系列</option>
+              </select>
+            </label>
+            <label>
+              <span>X-axis</span>
+              <select id="xDirectionSelect">
+                <option value="asc">昇順表示</option>
+                <option value="desc">降順表示</option>
+              </select>
+            </label>
+          </div>
+          <button id="resetZoomBtn" type="button" disabled>Reset zoom</button>
+        </div>
         <div class="canvas-wrap">
           <canvas id="plotCanvas" width="1200" height="720" aria-label="plot"></canvas>
         </div>
+        <p class="chart-hint">
+          ヒント: 系列を絞り込んで比較できます。グラフ上を左右にドラッグするとズーム、Reset zoom で解除します。
+        </p>
       </section>
 
       <section class="panel preview-panel">
-        <h2>系列ごとの先頭データプレビュー</h2>
+        <h2>系列サマリー &amp; 先頭データプレビュー</h2>
         <div class="table-wrap">
           <table>
             <thead>
