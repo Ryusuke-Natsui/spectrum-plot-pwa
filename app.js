@@ -663,6 +663,7 @@ function drawPlot() {
       }
     });
     ctx.stroke();
+  });
 
   const peakPoint = getPeakPoint(allPoints.filter((point) => point.x >= x0 && point.x <= x1));
   if (peakPoint) {
@@ -797,6 +798,12 @@ function pointerToDataX(canvasX) {
 
 fileInput.addEventListener("change", async (event) => {
   await handleFiles(event.target.files);
+});
+
+["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+  document.addEventListener(eventName, (event) => {
+    event.preventDefault();
+  });
 });
 
 ["dragenter", "dragover"].forEach((eventName) => {
