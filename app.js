@@ -1,40 +1,55 @@
 const SERIES_COLORS = [
-  "#1d4ed8",
-  "#dc2626",
-  "#059669",
-  "#7c3aed",
-  "#ea580c",
-  "#0891b2",
-  "#ca8a04",
-  "#be123c",
+  "#60a5fa",
+  "#f87171",
+  "#34d399",
+  "#c084fc",
+  "#fbbf24",
+  "#22d3ee",
+  "#fb7185",
+  "#a3e635",
 ];
 
 const state = {
   datasets: [],
+  view: {
+    selectedSeries: "all",
+    xDirection: "asc",
+    zoomDomain: null,
+  },
+  interaction: {
+    dragStartX: null,
+    dragCurrentX: null,
+  },
 };
-
-const CANVAS_FONT_STACK = "Arial, \"Helvetica Neue\", \"Noto Sans JP\", sans-serif";
 
 const fileInput = document.getElementById("fileInput");
 const dropzone = document.getElementById("dropzone");
 const loadSampleBtn = document.getElementById("loadSampleBtn");
 const clearFilesBtn = document.getElementById("clearFilesBtn");
 const downloadPngBtn = document.getElementById("downloadPngBtn");
-const xLabelInput = document.getElementById("xLabelInput");
-const yLabelInput = document.getElementById("yLabelInput");
+const resetZoomBtn = document.getElementById("resetZoomBtn");
+const titleInput = document.getElementById("titleInput");
+const xLabelSelect = document.getElementById("xLabelSelect");
+const yLabelSelect = document.getElementById("yLabelSelect");
+const seriesFilter = document.getElementById("seriesFilter");
+const xDirectionSelect = document.getElementById("xDirectionSelect");
 const fileNameEl = document.getElementById("fileName");
 const pointCountEl = document.getElementById("pointCount");
 const xRangeEl = document.getElementById("xRange");
 const yRangeEl = document.getElementById("yRange");
 const loadedCountEl = document.getElementById("loadedCount");
+const viewModeLabelEl = document.getElementById("viewModeLabel");
+const peakXEl = document.getElementById("peakX");
+const xStepEl = document.getElementById("xStep");
 const seriesListEl = document.getElementById("seriesList");
 const previewBody = document.getElementById("previewBody");
+const previewPanel = document.querySelector(".preview-panel");
 const canvas = document.getElementById("plotCanvas");
 const ctx = canvas.getContext("2d");
 
 function formatNumber(value) {
   if (!Number.isFinite(value)) return "-";
-  return Math.abs(value) >= 1000 || Math.abs(value) < 0.01
+  return Math.abs(value) >= 1000 || (Math.abs(value) > 0 && Math.abs(value) < 0.01)
     ? value.toExponential(4)
     : value.toFixed(4);
 }
@@ -64,35 +79,96 @@ function extractTwoColumnData(text) {
   return points;
 }
 
-function getAllPoints() {
-  return state.datasets.flatMap((dataset) => dataset.data);
+function getFilteredDatasets() {
+  const datasets = state.view.selectedSeries === "all"
+    ? state.datasets
+    : state.datasets.filter((dataset) => dataset.id === state.view.selectedSeries);
+
+  return datasets.map((dataset) => {
+    const sorted = [...dataset.data].sort((a, b) => a.x - b.x);
+    return {
+      ...dataset,
+      data: state.view.xDirection === "asc" ? sorted : [...sorted].reverse(),
+    };
+  });
+}
+
+function getVisiblePoints() {
+  return getFilteredDatasets().flatMap((dataset) => dataset.data);
+}
+
+function getPeakPoint(points) {
+  if (!points.length) return null;
+  return points.reduce((peak, point) => (point.y > peak.y ? point : peak), points[0]);
+}
+
+function estimateXStep(points) {
+  if (points.length < 2) return null;
+  const sortedXs = [...new Set(points.map((point) => point.x))].sort((a, b) => a - b);
+  if (sortedXs.length < 2) return null;
+  const steps = [];
+  for (let i = 1; i < sortedXs.length; i += 1) {
+    const step = sortedXs[i] - sortedXs[i - 1];
+    if (Math.abs(step) > 0) steps.push(Math.abs(step));
+  }
+  if (!steps.length) return null;
+  return steps.reduce((sum, step) => sum + step, 0) / steps.length;
+}
+
+function syncSeriesFilterOptions() {
+  const previousValue = seriesFilter.value;
+  seriesFilter.innerHTML = '<option value="all">すべての系列</option>';
+
+  state.datasets.forEach((dataset) => {
+    const option = document.createElement("option");
+    option.value = dataset.id;
+    option.textContent = dataset.fileName;
+    seriesFilter.append(option);
+  });
+
+  const nextValue = state.datasets.some((dataset) => dataset.id === previousValue) ? previousValue : "all";
+  state.view.selectedSeries = nextValue;
+  seriesFilter.value = nextValue;
 }
 
 function updateSummary() {
-  const datasets = state.datasets;
-  const allPoints = getAllPoints();
+  const datasets = getFilteredDatasets();
+  const allVisiblePoints = getVisiblePoints();
 
-  loadedCountEl.textContent = String(datasets.length);
-  fileNameEl.textContent = datasets.length
-    ? datasets.map((dataset) => dataset.fileName).join(", ")
+  loadedCountEl.textContent = String(state.datasets.length);
+  fileNameEl.textContent = state.datasets.length
+    ? state.datasets.map((dataset) => dataset.fileName).join(", ")
     : "なし";
-  pointCountEl.textContent = String(allPoints.length);
+  pointCountEl.textContent = String(allVisiblePoints.length);
+  viewModeLabelEl.textContent = state.view.selectedSeries === "all"
+    ? "全系列"
+    : `${datasets[0]?.fileName ?? "-"} のみ`;
 
-  if (!allPoints.length) {
+  if (!allVisiblePoints.length) {
     xRangeEl.textContent = "-";
     yRangeEl.textContent = "-";
+    peakXEl.textContent = "-";
+    xStepEl.textContent = "-";
     return;
   }
 
-  const xs = allPoints.map((point) => point.x);
-  const ys = allPoints.map((point) => point.y);
+  const visiblePoints = state.view.zoomDomain
+    ? allVisiblePoints.filter((point) => point.x >= state.view.zoomDomain[0] && point.x <= state.view.zoomDomain[1])
+    : allVisiblePoints;
+  const effectivePoints = visiblePoints.length ? visiblePoints : allVisiblePoints;
+  const xs = effectivePoints.map((point) => point.x);
+  const ys = effectivePoints.map((point) => point.y);
   const xMin = Math.min(...xs);
   const xMax = Math.max(...xs);
   const yMin = Math.min(...ys);
   const yMax = Math.max(...ys);
+  const peakPoint = getPeakPoint(effectivePoints);
+  const step = estimateXStep(allVisiblePoints);
 
   xRangeEl.textContent = `${formatNumber(xMin)} 〜 ${formatNumber(xMax)}`;
   yRangeEl.textContent = `${formatNumber(yMin)} 〜 ${formatNumber(yMax)}`;
+  peakXEl.textContent = peakPoint ? formatNumber(peakPoint.x) : "-";
+  xStepEl.textContent = step ? formatNumber(step) : "-";
 }
 
 function updateSeriesList() {
@@ -102,107 +178,146 @@ function updateSeriesList() {
   }
 
   seriesListEl.innerHTML = state.datasets
-    .map(
-      (dataset) => `
-        <li>
+    .map((dataset) => {
+      const isActive = state.view.selectedSeries === "all" || state.view.selectedSeries === dataset.id;
+      return `
+        <li class="${isActive ? "active" : ""}">
           <span class="series-chip">
             <span class="series-swatch" style="background:${dataset.color}"></span>
             <span>${dataset.fileName}</span>
           </span>
           <span class="series-meta">${dataset.data.length} points</span>
         </li>
-      `,
-    )
+      `;
+    })
     .join("");
 }
 
+function renderPreviewSummary() {
+  const existingSummary = previewPanel.querySelector(".table-summary");
+  if (existingSummary) existingSummary.remove();
+
+  const allVisiblePoints = getVisiblePoints();
+  const datasets = getFilteredDatasets();
+  const peakPoint = getPeakPoint(allVisiblePoints);
+  const summary = document.createElement("div");
+  summary.className = "table-summary";
+  summary.innerHTML = `
+    <div class="summary-card">
+      <strong>表示対象</strong>
+      <span>${state.view.selectedSeries === "all" ? "全系列" : datasets[0]?.fileName ?? "-"}</span>
+    </div>
+    <div class="summary-card">
+      <strong>最大ピーク</strong>
+      <span>${peakPoint ? formatNumber(peakPoint.x) : "-"}</span>
+    </div>
+    <div class="summary-card">
+      <strong>表示中データ点</strong>
+      <span>${allVisiblePoints.length}</span>
+    </div>
+    <div class="summary-card">
+      <strong>ズーム範囲</strong>
+      <span>${state.view.zoomDomain ? `${formatNumber(state.view.zoomDomain[0])} – ${formatNumber(state.view.zoomDomain[1])}` : "未設定"}</span>
+    </div>
+  `;
+
+  previewPanel.insertBefore(summary, previewPanel.querySelector(".table-wrap"));
+}
+
 function updatePreview() {
+  renderPreviewSummary();
+
   if (!state.datasets.length) {
-    previewBody.innerHTML = `<tr><td colspan="4" class="muted">まだデータがありません</td></tr>`;
+    previewBody.innerHTML = '<tr><td colspan="4" class="muted">まだデータがありません</td></tr>';
     return;
   }
 
-  previewBody.innerHTML = state.datasets
-    .flatMap((dataset) =>
-      dataset.data.slice(0, 4).map(
-        (point, index) => `
-          <tr>
-            <td>${dataset.fileName}</td>
-            <td>${index + 1}</td>
-            <td>${formatNumber(point.x)}</td>
-            <td>${formatNumber(point.y)}</td>
-          </tr>
-        `,
-      ),
-    )
+  previewBody.innerHTML = getFilteredDatasets()
+    .flatMap((dataset) => dataset.data.slice(0, 4).map((point, index) => `
+      <tr>
+        <td>${dataset.fileName}</td>
+        <td>${index + 1}</td>
+        <td>${formatNumber(point.x)}</td>
+        <td>${formatNumber(point.y)}</td>
+      </tr>
+    `))
     .join("");
 }
 
 function drawLegend(datasets, x, y) {
-  ctx.font = `500 16px ${CANVAS_FONT_STACK}`;
+  ctx.font = "500 16px Inter, sans-serif";
   ctx.textAlign = "left";
 
   datasets.forEach((dataset, index) => {
     const itemY = y + index * 24;
     ctx.fillStyle = dataset.color;
     ctx.fillRect(x, itemY - 10, 18, 4);
-    ctx.fillStyle = "#334155";
+    ctx.fillStyle = "#cbd5e1";
     ctx.fillText(dataset.fileName, x + 28, itemY);
   });
 }
 
-function drawPlot() {
-  const datasets = state.datasets;
-  const allPoints = getAllPoints();
-  const width = canvas.width;
-  const height = canvas.height;
-  ctx.clearRect(0, 0, width, height);
-
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, width, height);
-
-  const margin = { top: 48, right: 48, bottom: 85, left: 95 };
-  const plotWidth = width - margin.left - margin.right;
-  const plotHeight = height - margin.top - margin.bottom;
-
-  ctx.strokeStyle = "#e2e8f0";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(margin.left, margin.top, plotWidth, plotHeight);
-
-  ctx.fillStyle = "#0f172a";
-  ctx.font = `700 30px ${CANVAS_FONT_STACK}`;
-  ctx.textAlign = "center";
-  ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
-
-  if (!allPoints.length) {
-    ctx.fillStyle = "#64748b";
-    ctx.font = `500 24px ${CANVAS_FONT_STACK}`;
-    ctx.fillText("ここにグラフが表示されます", width / 2, height / 2);
-    return;
-  }
-
+function getPlotBounds(allPoints) {
   const xs = allPoints.map((point) => point.x);
   const ys = allPoints.map((point) => point.y);
   const xMin = Math.min(...xs);
   const xMax = Math.max(...xs);
   const yMin = Math.min(...ys);
   const yMax = Math.max(...ys);
-
   const xPad = (xMax - xMin || 1) * 0.03;
   const yPad = (yMax - yMin || 1) * 0.08;
-  const x0 = xMin - xPad;
-  const x1 = xMax + xPad;
-  const y0 = yMin - yPad;
-  const y1 = yMax + yPad;
+  const fallbackDomain = [xMin - xPad, xMax + xPad];
+  const zoomDomain = state.view.zoomDomain ?? fallbackDomain;
 
-  const mapX = (x) => margin.left + ((x - x0) / (x1 - x0)) * plotWidth;
-  const mapY = (y) => margin.top + (1 - (y - y0) / (y1 - y0)) * plotHeight;
+  return {
+    x0: Math.min(...zoomDomain),
+    x1: Math.max(...zoomDomain),
+    y0: yMin - yPad,
+    y1: yMax + yPad,
+  };
+}
+
+function drawPlot() {
+  const datasets = getFilteredDatasets();
+  const allPoints = datasets.flatMap((dataset) => dataset.data);
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+
+  ctx.fillStyle = "#0b1326";
+  ctx.fillRect(0, 0, width, height);
+
+  const margin = { top: 90, right: 48, bottom: 85, left: 95 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+
+  ctx.strokeStyle = "#22304a";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(margin.left, margin.top, plotWidth, plotHeight);
+
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "700 30px Inter, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
+
+  if (!allPoints.length) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "500 24px Inter, sans-serif";
+    ctx.fillText("ファイルを読み込むとここにグラフが表示されます", width / 2, height / 2 - 10);
+    ctx.font = "500 18px Inter, sans-serif";
+    ctx.fillText(".txt / .csv / .dat 対応。左のサンプル追加でも試せます。", width / 2, height / 2 + 26);
+    return;
+  }
+
+  const { x0, x1, y0, y1 } = getPlotBounds(allPoints);
+  const mapX = (x) => margin.left + ((x - x0) / (x1 - x0 || 1)) * plotWidth;
+  const mapY = (y) => margin.top + (1 - (y - y0) / (y1 - y0 || 1)) * plotHeight;
 
   const xTicks = 6;
   const yTicks = 6;
-  ctx.font = `500 18px ${CANVAS_FONT_STACK}`;
-  ctx.fillStyle = "#334155";
-  ctx.strokeStyle = "#cbd5e1";
+  ctx.font = "500 18px Inter, sans-serif";
+  ctx.fillStyle = "#cbd5e1";
+  ctx.strokeStyle = "#22304a";
 
   for (let i = 0; i <= xTicks; i += 1) {
     const t = i / xTicks;
@@ -248,22 +363,49 @@ function drawPlot() {
     ctx.stroke();
   });
 
+  const peakPoint = getPeakPoint(allPoints.filter((point) => point.x >= x0 && point.x <= x1));
+  if (peakPoint) {
+    const peakPx = mapX(peakPoint.x);
+    const peakPy = mapY(peakPoint.y);
+    ctx.strokeStyle = "#34d399";
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(peakPx, margin.top);
+    ctx.lineTo(peakPx, margin.top + plotHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#fbbf24";
+    ctx.beginPath();
+    ctx.arc(peakPx, peakPy, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   drawLegend(datasets, margin.left, 68);
 
-  ctx.fillStyle = "#0f172a";
-  ctx.font = `600 22px ${CANVAS_FONT_STACK}`;
+  if (state.interaction.dragStartX !== null && state.interaction.dragCurrentX !== null) {
+    const left = Math.min(state.interaction.dragStartX, state.interaction.dragCurrentX);
+    const widthRect = Math.abs(state.interaction.dragCurrentX - state.interaction.dragStartX);
+    ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+    ctx.fillRect(left, margin.top, widthRect, plotHeight);
+    ctx.strokeStyle = "rgba(96, 165, 250, 0.9)";
+    ctx.strokeRect(left, margin.top, widthRect, plotHeight);
+  }
+
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "600 22px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(xLabelSelect.value || "Raman shift (cm−1)", width / 2, height - 24);
+  ctx.fillText(xLabelSelect.value, width / 2, height - 24);
 
   ctx.save();
   ctx.translate(26, height / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
-  ctx.fillText(yLabelSelect.value || "Intensity (counts)", 0, 0);
+  ctx.fillText(yLabelSelect.value, 0, 0);
   ctx.restore();
 }
 
 function renderAll() {
+  syncSeriesFilterOptions();
   updateSummary();
   updateSeriesList();
   updatePreview();
@@ -271,6 +413,7 @@ function renderAll() {
   const hasData = state.datasets.length > 0;
   downloadPngBtn.disabled = !hasData;
   clearFilesBtn.disabled = !hasData;
+  resetZoomBtn.disabled = !state.view.zoomDomain;
 }
 
 function appendText(text, fileName) {
@@ -280,13 +423,15 @@ function appendText(text, fileName) {
     return false;
   }
 
-  const dataset = {
-    fileName,
-    data,
-    color: SERIES_COLORS[state.datasets.length % SERIES_COLORS.length],
-  };
-
-  state.datasets = [...state.datasets, dataset];
+  state.datasets = [
+    ...state.datasets,
+    {
+      id: crypto.randomUUID(),
+      fileName,
+      data,
+      color: SERIES_COLORS[state.datasets.length % SERIES_COLORS.length],
+    },
+  ];
   return true;
 }
 
@@ -301,6 +446,7 @@ async function handleFiles(files) {
   }
 
   if (loadedAny) {
+    state.view.zoomDomain = null;
     renderAll();
   }
 
@@ -309,7 +455,32 @@ async function handleFiles(files) {
 
 function resetDatasets() {
   state.datasets = [];
+  state.view.selectedSeries = "all";
+  state.view.zoomDomain = null;
   renderAll();
+}
+
+function getCanvasPlotMetrics() {
+  const rect = canvas.getBoundingClientRect();
+  const margin = { top: 90, right: 48, bottom: 85, left: 95 };
+  const plotWidth = canvas.width - margin.left - margin.right;
+  const plotHeight = canvas.height - margin.top - margin.bottom;
+  return { rect, margin, plotWidth, plotHeight };
+}
+
+function toCanvasX(clientX) {
+  const { rect } = getCanvasPlotMetrics();
+  return ((clientX - rect.left) / rect.width) * canvas.width;
+}
+
+function pointerToDataX(canvasX) {
+  const points = getVisiblePoints();
+  if (!points.length) return null;
+  const { margin, plotWidth } = getCanvasPlotMetrics();
+  const { x0, x1 } = getPlotBounds(points);
+  const clamped = Math.min(Math.max(canvasX, margin.left), margin.left + plotWidth);
+  const ratio = (clamped - margin.left) / plotWidth;
+  return x0 + (x1 - x0) * ratio;
 }
 
 fileInput.addEventListener("change", async (event) => {
@@ -348,17 +519,72 @@ clearFilesBtn.addEventListener("click", () => {
 
 downloadPngBtn.addEventListener("click", () => {
   const link = document.createElement("a");
-  const safeTitle = "plot";
+  const safeTitle = (titleInput.value || "plot").replace(/[^a-z0-9-_]+/gi, "_");
   link.href = canvas.toDataURL("image/png");
   link.download = `${safeTitle}.png`;
   link.click();
 });
 
-[xLabelInput, yLabelInput].forEach((input) => {
-  input.addEventListener("input", drawPlot);
+resetZoomBtn.addEventListener("click", () => {
+  state.view.zoomDomain = null;
+  renderAll();
 });
 
-titleInput.addEventListener("input", drawPlot);
+seriesFilter.addEventListener("change", (event) => {
+  state.view.selectedSeries = event.target.value;
+  state.view.zoomDomain = null;
+  renderAll();
+});
+
+xDirectionSelect.addEventListener("change", (event) => {
+  state.view.xDirection = event.target.value;
+  state.view.zoomDomain = null;
+  renderAll();
+});
+
+[titleInput, xLabelSelect, yLabelSelect].forEach((input) => {
+  input.addEventListener("input", drawPlot);
+  input.addEventListener("change", drawPlot);
+});
+
+canvas.addEventListener("pointerdown", (event) => {
+  if (!getVisiblePoints().length) return;
+  state.interaction.dragStartX = toCanvasX(event.clientX);
+  state.interaction.dragCurrentX = state.interaction.dragStartX;
+  canvas.setPointerCapture(event.pointerId);
+  drawPlot();
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (state.interaction.dragStartX === null) return;
+  state.interaction.dragCurrentX = toCanvasX(event.clientX);
+  drawPlot();
+});
+
+function finishZoom() {
+  if (state.interaction.dragStartX === null || state.interaction.dragCurrentX === null) {
+    state.interaction.dragStartX = null;
+    state.interaction.dragCurrentX = null;
+    return;
+  }
+
+  const startDataX = pointerToDataX(state.interaction.dragStartX);
+  const endDataX = pointerToDataX(state.interaction.dragCurrentX);
+  if (startDataX !== null && endDataX !== null && Math.abs(endDataX - startDataX) > 0.0001) {
+    state.view.zoomDomain = [Math.min(startDataX, endDataX), Math.max(startDataX, endDataX)];
+  }
+
+  state.interaction.dragStartX = null;
+  state.interaction.dragCurrentX = null;
+  renderAll();
+}
+
+canvas.addEventListener("pointerup", finishZoom);
+canvas.addEventListener("pointercancel", finishZoom);
+canvas.addEventListener("dblclick", () => {
+  state.view.zoomDomain = null;
+  renderAll();
+});
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
