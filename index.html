@@ -41,11 +41,18 @@
         <div class="field-grid">
           <label>
             <span>X軸ラベル</span>
-            <input id="xLabelInput" type="text" value="X" />
+            <select id="xLabelSelect">
+              <option value="Raman shift (cm−1)">Raman: Raman shift (cm−1)</option>
+              <option value="PL: Photon energy (eV)">PL: Photon energy (eV)</option>
+            </select>
           </label>
           <label>
             <span>Y軸ラベル</span>
-            <input id="yLabelInput" type="text" value="Intensity" />
+            <select id="yLabelSelect">
+              <option value="Intensity (counts)">Intensity (counts)</option>
+              <option value="Intensity (cps)">Intensity (cps)</option>
+              <option value="Intensity (a.u.)">Intensity (a.u.)</option>
+            </select>
           </label>
           <label>
             <span>タイトル</span>
