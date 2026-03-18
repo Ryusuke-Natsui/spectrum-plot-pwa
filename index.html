@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="2列テキストファイルを読み込んでグラフ表示するPWA" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <title>Text Plot PWA</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">PWA for spectroscopy text files</p>
+        <h1>テキストファイルからグラフを出力</h1>
+        <p class="lead">
+          2列の数値データを含む .txt / .csv / .dat を読み込み、折れ線グラフとして表示します。
+          GitHub Pages でそのまま公開できます。
+        </p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel controls">
+        <h2>ファイル読み込み</h2>
+        <label class="dropzone" id="dropzone" for="fileInput">
+          <input id="fileInput" type="file" accept=".txt,.csv,.dat,text/plain" />
+          <span class="dropzone-title">ここにファイルをドロップ</span>
+          <span class="dropzone-subtitle">またはクリックして選択</span>
+        </label>
+
+        <div class="button-row">
+          <button id="loadSampleBtn" type="button">同梱サンプルを読み込む</button>
+          <button id="downloadPngBtn" type="button" disabled>PNGとして保存</button>
+        </div>
+
+        <div class="field-grid">
+          <label>
+            <span>X軸ラベル</span>
+            <input id="xLabelInput" type="text" value="X" />
+          </label>
+          <label>
+            <span>Y軸ラベル</span>
+            <input id="yLabelInput" type="text" value="Intensity" />
+          </label>
+          <label>
+            <span>タイトル</span>
+            <input id="titleInput" type="text" value="Spectrum" />
+          </label>
+        </div>
+
+        <div class="status-box">
+          <p><strong>読み込みファイル:</strong> <span id="fileName">なし</span></p>
+          <p><strong>データ点数:</strong> <span id="pointCount">0</span></p>
+          <p><strong>X範囲:</strong> <span id="xRange">-</span></p>
+          <p><strong>Y範囲:</strong> <span id="yRange">-</span></p>
+          <p class="hint">
+            先頭2列の数値を自動認識します。空行やコメント行、文字を含むヘッダー行は自動で無視します。
+          </p>
+        </div>
+      </section>
+
+      <section class="panel chart-panel">
+        <div class="canvas-wrap">
+          <canvas id="plotCanvas" width="1200" height="720" aria-label="plot"></canvas>
+        </div>
+      </section>
+
+      <section class="panel preview-panel">
+        <h2>データ先頭プレビュー</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>X</th>
+                <th>Y</th>
+              </tr>
+            </thead>
+            <tbody id="previewBody">
+              <tr>
+                <td colspan="3" class="muted">まだデータがありません</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Offline-ready PWA / Vanilla HTML, CSS, JavaScript</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

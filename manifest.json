@@ -1,0 +1,21 @@
+{
+  "name": "Text Plot PWA",
+  "short_name": "TextPlot",
+  "description": "2列テキストファイルを読み込んで折れ線グラフ表示するPWA",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8fbff",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
