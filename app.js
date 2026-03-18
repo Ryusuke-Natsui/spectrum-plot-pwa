@@ -1,11 +1,22 @@
+const SERIES_COLORS = [
+  "#1d4ed8",
+  "#dc2626",
+  "#059669",
+  "#7c3aed",
+  "#ea580c",
+  "#0891b2",
+  "#ca8a04",
+  "#be123c",
+];
+
 const state = {
-  data: [],
-  fileName: "なし",
+  datasets: [],
 };
 
 const fileInput = document.getElementById("fileInput");
 const dropzone = document.getElementById("dropzone");
 const loadSampleBtn = document.getElementById("loadSampleBtn");
+const clearFilesBtn = document.getElementById("clearFilesBtn");
 const downloadPngBtn = document.getElementById("downloadPngBtn");
 const xLabelInput = document.getElementById("xLabelInput");
 const yLabelInput = document.getElementById("yLabelInput");
@@ -14,6 +25,8 @@ const fileNameEl = document.getElementById("fileName");
 const pointCountEl = document.getElementById("pointCount");
 const xRangeEl = document.getElementById("xRange");
 const yRangeEl = document.getElementById("yRange");
+const loadedCountEl = document.getElementById("loadedCount");
+const seriesListEl = document.getElementById("seriesList");
 const previewBody = document.getElementById("previewBody");
 const canvas = document.getElementById("plotCanvas");
 const ctx = canvas.getContext("2d");
@@ -50,18 +63,28 @@ function extractTwoColumnData(text) {
   return points;
 }
 
-function updateSummary(data) {
-  fileNameEl.textContent = state.fileName;
-  pointCountEl.textContent = String(data.length);
+function getAllPoints() {
+  return state.datasets.flatMap((dataset) => dataset.data);
+}
 
-  if (!data.length) {
+function updateSummary() {
+  const datasets = state.datasets;
+  const allPoints = getAllPoints();
+
+  loadedCountEl.textContent = String(datasets.length);
+  fileNameEl.textContent = datasets.length
+    ? datasets.map((dataset) => dataset.fileName).join(", ")
+    : "なし";
+  pointCountEl.textContent = String(allPoints.length);
+
+  if (!allPoints.length) {
     xRangeEl.textContent = "-";
     yRangeEl.textContent = "-";
     return;
   }
 
-  const xs = data.map((point) => point.x);
-  const ys = data.map((point) => point.y);
+  const xs = allPoints.map((point) => point.x);
+  const ys = allPoints.map((point) => point.y);
   const xMin = Math.min(...xs);
   const xMax = Math.max(...xs);
   const yMin = Math.min(...ys);
@@ -71,28 +94,65 @@ function updateSummary(data) {
   yRangeEl.textContent = `${formatNumber(yMin)} 〜 ${formatNumber(yMax)}`;
 }
 
-function updatePreview(data) {
-  if (!data.length) {
-    previewBody.innerHTML = `<tr><td colspan="3" class="muted">まだデータがありません</td></tr>`;
+function updateSeriesList() {
+  if (!state.datasets.length) {
+    seriesListEl.innerHTML = '<li class="muted">まだ系列がありません</li>';
     return;
   }
 
-  previewBody.innerHTML = data
-    .slice(0, 12)
+  seriesListEl.innerHTML = state.datasets
     .map(
-      (point, index) => `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${formatNumber(point.x)}</td>
-          <td>${formatNumber(point.y)}</td>
-        </tr>
+      (dataset) => `
+        <li>
+          <span class="series-chip">
+            <span class="series-swatch" style="background:${dataset.color}"></span>
+            <span>${dataset.fileName}</span>
+          </span>
+          <span class="series-meta">${dataset.data.length} points</span>
+        </li>
       `,
     )
     .join("");
 }
 
+function updatePreview() {
+  if (!state.datasets.length) {
+    previewBody.innerHTML = `<tr><td colspan="4" class="muted">まだデータがありません</td></tr>`;
+    return;
+  }
+
+  previewBody.innerHTML = state.datasets
+    .flatMap((dataset) =>
+      dataset.data.slice(0, 4).map(
+        (point, index) => `
+          <tr>
+            <td>${dataset.fileName}</td>
+            <td>${index + 1}</td>
+            <td>${formatNumber(point.x)}</td>
+            <td>${formatNumber(point.y)}</td>
+          </tr>
+        `,
+      ),
+    )
+    .join("");
+}
+
+function drawLegend(datasets, x, y) {
+  ctx.font = "500 16px Inter, sans-serif";
+  ctx.textAlign = "left";
+
+  datasets.forEach((dataset, index) => {
+    const itemY = y + index * 24;
+    ctx.fillStyle = dataset.color;
+    ctx.fillRect(x, itemY - 10, 18, 4);
+    ctx.fillStyle = "#334155";
+    ctx.fillText(dataset.fileName, x + 28, itemY);
+  });
+}
+
 function drawPlot() {
-  const data = state.data;
+  const datasets = state.datasets;
+  const allPoints = getAllPoints();
   const width = canvas.width;
   const height = canvas.height;
   ctx.clearRect(0, 0, width, height);
@@ -100,7 +160,7 @@ function drawPlot() {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  const margin = { top: 70, right: 40, bottom: 85, left: 95 };
+  const margin = { top: 90, right: 48, bottom: 85, left: 95 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
@@ -111,17 +171,17 @@ function drawPlot() {
   ctx.fillStyle = "#0f172a";
   ctx.font = "700 30px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(titleInput.value || "Spectrum", width / 2, 40);
+  ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
 
-  if (!data.length) {
+  if (!allPoints.length) {
     ctx.fillStyle = "#64748b";
     ctx.font = "500 24px Inter, sans-serif";
     ctx.fillText("ここにグラフが表示されます", width / 2, height / 2);
     return;
   }
 
-  const xs = data.map((point) => point.x);
-  const ys = data.map((point) => point.y);
+  const xs = allPoints.map((point) => point.x);
+  const ys = allPoints.map((point) => point.y);
   const xMin = Math.min(...xs);
   const xMax = Math.max(...xs);
   const yMin = Math.min(...ys);
@@ -171,19 +231,23 @@ function drawPlot() {
     ctx.fillText(formatNumber(yValue), margin.left - 12, yPos + 6);
   }
 
-  ctx.strokeStyle = "#1d4ed8";
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  data.forEach((point, index) => {
-    const px = mapX(point.x);
-    const py = mapY(point.y);
-    if (index === 0) {
-      ctx.moveTo(px, py);
-    } else {
-      ctx.lineTo(px, py);
-    }
+  datasets.forEach((dataset) => {
+    ctx.strokeStyle = dataset.color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    dataset.data.forEach((point, index) => {
+      const px = mapX(point.x);
+      const py = mapY(point.y);
+      if (index === 0) {
+        ctx.moveTo(px, py);
+      } else {
+        ctx.lineTo(px, py);
+      }
+    });
+    ctx.stroke();
   });
-  ctx.stroke();
+
+  drawLegend(datasets, margin.left, 68);
 
   ctx.fillStyle = "#0f172a";
   ctx.font = "600 22px Inter, sans-serif";
@@ -199,33 +263,56 @@ function drawPlot() {
 }
 
 function renderAll() {
-  updateSummary(state.data);
-  updatePreview(state.data);
+  updateSummary();
+  updateSeriesList();
+  updatePreview();
   drawPlot();
-  downloadPngBtn.disabled = state.data.length === 0;
+  const hasData = state.datasets.length > 0;
+  downloadPngBtn.disabled = !hasData;
+  clearFilesBtn.disabled = !hasData;
 }
 
-function loadText(text, fileName) {
+function appendText(text, fileName) {
   const data = extractTwoColumnData(text);
   if (!data.length) {
-    window.alert("有効な2列数値データを見つけられませんでした。");
-    return;
+    window.alert(`${fileName}: 有効な2列数値データを見つけられませんでした。`);
+    return false;
   }
 
-  state.data = data;
-  state.fileName = fileName;
+  const dataset = {
+    fileName,
+    data,
+    color: SERIES_COLORS[state.datasets.length % SERIES_COLORS.length],
+  };
+
+  state.datasets = [...state.datasets, dataset];
+  return true;
+}
+
+async function handleFiles(files) {
+  const fileList = Array.from(files || []);
+  if (!fileList.length) return;
+
+  let loadedAny = false;
+  for (const file of fileList) {
+    const text = await file.text();
+    loadedAny = appendText(text, file.name) || loadedAny;
+  }
+
+  if (loadedAny) {
+    renderAll();
+  }
+
+  fileInput.value = "";
+}
+
+function resetDatasets() {
+  state.datasets = [];
   renderAll();
 }
 
-async function handleFile(file) {
-  const text = await file.text();
-  loadText(text, file.name);
-}
-
 fileInput.addEventListener("change", async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  await handleFile(file);
+  await handleFiles(event.target.files);
 });
 
 ["dragenter", "dragover"].forEach((eventName) => {
@@ -243,15 +330,19 @@ fileInput.addEventListener("change", async (event) => {
 });
 
 dropzone.addEventListener("drop", async (event) => {
-  const file = event.dataTransfer?.files?.[0];
-  if (!file) return;
-  await handleFile(file);
+  await handleFiles(event.dataTransfer?.files);
 });
 
 loadSampleBtn.addEventListener("click", async () => {
   const response = await fetch("examples/sample-spectrum.txt");
   const text = await response.text();
-  loadText(text, "sample-spectrum.txt");
+  if (appendText(text, `sample-spectrum-${state.datasets.length + 1}.txt`)) {
+    renderAll();
+  }
+});
+
+clearFilesBtn.addEventListener("click", () => {
+  resetDatasets();
 });
 
 downloadPngBtn.addEventListener("click", () => {

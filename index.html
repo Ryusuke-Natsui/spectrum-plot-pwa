@@ -27,13 +27,14 @@
       <section class="panel controls">
         <h2>ファイル読み込み</h2>
         <label class="dropzone" id="dropzone" for="fileInput">
-          <input id="fileInput" type="file" accept=".txt,.csv,.dat,text/plain" />
+          <input id="fileInput" type="file" accept=".txt,.csv,.dat,text/plain" multiple />
           <span class="dropzone-title">ここにファイルをドロップ</span>
-          <span class="dropzone-subtitle">またはクリックして選択</span>
+          <span class="dropzone-subtitle">複数ファイルをまとめて追加、またはクリックして選択</span>
         </label>
 
         <div class="button-row">
-          <button id="loadSampleBtn" type="button">同梱サンプルを読み込む</button>
+          <button id="loadSampleBtn" type="button">同梱サンプルを追加</button>
+          <button id="clearFilesBtn" type="button" disabled>系列をクリア</button>
           <button id="downloadPngBtn" type="button" disabled>PNGとして保存</button>
         </div>
 
@@ -54,12 +55,17 @@
 
         <div class="status-box">
           <p><strong>読み込みファイル:</strong> <span id="fileName">なし</span></p>
-          <p><strong>データ点数:</strong> <span id="pointCount">0</span></p>
+          <p><strong>系列数:</strong> <span id="loadedCount">0</span></p>
+          <p><strong>合計データ点数:</strong> <span id="pointCount">0</span></p>
           <p><strong>X範囲:</strong> <span id="xRange">-</span></p>
           <p><strong>Y範囲:</strong> <span id="yRange">-</span></p>
           <p class="hint">
             先頭2列の数値を自動認識します。空行やコメント行、文字を含むヘッダー行は自動で無視します。
+            追加読込したファイルは色分けして同一グラフへ重ね描きします。
           </p>
+          <ul id="seriesList" class="series-list">
+            <li class="muted">まだ系列がありません</li>
+          </ul>
         </div>
       </section>
 
@@ -70,11 +76,12 @@
       </section>
 
       <section class="panel preview-panel">
-        <h2>データ先頭プレビュー</h2>
+        <h2>系列ごとの先頭データプレビュー</h2>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
+                <th>ファイル</th>
                 <th>#</th>
                 <th>X</th>
                 <th>Y</th>
@@ -82,7 +89,7 @@
             </thead>
             <tbody id="previewBody">
               <tr>
-                <td colspan="3" class="muted">まだデータがありません</td>
+                <td colspan="4" class="muted">まだデータがありません</td>
               </tr>
             </tbody>
           </table>

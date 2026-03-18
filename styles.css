@@ -132,7 +132,11 @@ button:disabled {
   opacity: 0.5;
 }
 
-button:nth-child(2) {
+#clearFilesBtn {
+  background: #475569;
+}
+
+#downloadPngBtn {
   background: var(--accent);
 }
 
@@ -169,6 +173,45 @@ input[type="text"] {
   margin: 0 0 8px;
 }
 
+.series-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.series-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.series-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.series-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.series-chip span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.series-meta,
 .hint,
 .muted {
   color: var(--muted);
@@ -202,7 +245,7 @@ table {
 }
 
 th,
- td {
+td {
   padding: 12px 14px;
   border-bottom: 1px solid #e2e8f0;
   text-align: left;
