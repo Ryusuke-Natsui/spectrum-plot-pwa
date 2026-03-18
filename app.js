@@ -298,7 +298,7 @@ function drawPlot() {
   ctx.fillStyle = "#e2e8f0";
   ctx.font = "700 30px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
+  ctx.fillText("Spectrum", width / 2, 42);
 
   if (!allPoints.length) {
     ctx.fillStyle = "#94a3b8";
