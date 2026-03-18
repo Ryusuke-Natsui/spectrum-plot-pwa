@@ -171,6 +171,32 @@ button:disabled {
   gap: 12px;
 }
 
+input[type="color"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px;
+  background: #0b1326;
+}
+
+.design-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.design-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+
+#applyPlotThemePresetBtn {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+#resetPlotThemeBtn {
+  background: #334155;
+}
+
 label span {
   display: block;
   font-size: 0.88rem;
@@ -394,7 +420,8 @@ th {
     width: 100%;
   }
 
-  .status-grid {
+  .status-grid,
+  .design-grid {
     grid-template-columns: 1fr;
   }
 }
