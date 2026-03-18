@@ -137,7 +137,8 @@ h2 {
 
 button,
 select,
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   border-radius: 12px;
   border: 1px solid var(--line);
   font: inherit;
@@ -178,6 +179,7 @@ label span {
 }
 
 input[type="text"],
+input[type="number"],
 select {
   width: 100%;
   padding: 11px 12px;
@@ -270,6 +272,29 @@ select {
   min-width: 180px;
 }
 
+.toolbar-actions {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.range-controls {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.range-controls label {
+  min-width: 120px;
+}
+
+#applyRangeBtn {
+  background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%);
+}
+
 .canvas-wrap {
   width: 100%;
   overflow: hidden;
@@ -357,6 +382,16 @@ th {
   .chart-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .toolbar-actions,
+  .range-controls {
+    justify-content: stretch;
+  }
+
+  .range-controls label,
+  .toolbar-actions > button {
+    width: 100%;
   }
 
   .status-grid {
