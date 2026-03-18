@@ -18,9 +18,8 @@ const dropzone = document.getElementById("dropzone");
 const loadSampleBtn = document.getElementById("loadSampleBtn");
 const clearFilesBtn = document.getElementById("clearFilesBtn");
 const downloadPngBtn = document.getElementById("downloadPngBtn");
-const xLabelSelect = document.getElementById("xLabelSelect");
-const yLabelSelect = document.getElementById("yLabelSelect");
-const titleInput = document.getElementById("titleInput");
+const xLabelInput = document.getElementById("xLabelInput");
+const yLabelInput = document.getElementById("yLabelInput");
 const fileNameEl = document.getElementById("fileName");
 const pointCountEl = document.getElementById("pointCount");
 const xRangeEl = document.getElementById("xRange");
@@ -160,18 +159,13 @@ function drawPlot() {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  const margin = { top: 90, right: 48, bottom: 85, left: 95 };
+  const margin = { top: 48, right: 48, bottom: 85, left: 95 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
   ctx.strokeStyle = "#e2e8f0";
   ctx.lineWidth = 1;
   ctx.strokeRect(margin.left, margin.top, plotWidth, plotHeight);
-
-  ctx.fillStyle = "#0f172a";
-  ctx.font = "700 30px Inter, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
 
   if (!allPoints.length) {
     ctx.fillStyle = "#64748b";
@@ -347,14 +341,14 @@ clearFilesBtn.addEventListener("click", () => {
 
 downloadPngBtn.addEventListener("click", () => {
   const link = document.createElement("a");
-  const safeTitle = (titleInput.value || "plot").replace(/[^a-z0-9-_]+/gi, "_");
+  const safeTitle = "plot";
   link.href = canvas.toDataURL("image/png");
   link.download = `${safeTitle}.png`;
   link.click();
 });
 
-[xLabelSelect, yLabelSelect].forEach((select) => {
-  select.addEventListener("change", drawPlot);
+[xLabelInput, yLabelInput].forEach((input) => {
+  input.addEventListener("input", drawPlot);
 });
 
 titleInput.addEventListener("input", drawPlot);
