@@ -9,6 +9,75 @@ const SERIES_COLORS = [
   "#a3e635",
 ];
 
+const DEFAULT_THEME = {
+  preset: "midnight",
+  pageBg: "#0b1120",
+  panelBg: "#0f172a",
+  textColor: "#e2e8f0",
+  mutedColor: "#94a3b8",
+  gridColor: "#22304a",
+  accentColor: "#3b82f6",
+  canvasBg: "#0b1326",
+  axisTextColor: "#cbd5e1",
+  titleColor: "#e2e8f0",
+  peakColor: "#fbbf24",
+  lineWidth: 2.5,
+  gridWidth: 1,
+  fontScale: 1,
+};
+
+const THEME_PRESETS = {
+  midnight: { ...DEFAULT_THEME },
+  paper: {
+    preset: "paper",
+    pageBg: "#f8fafc",
+    panelBg: "#ffffff",
+    textColor: "#0f172a",
+    mutedColor: "#475569",
+    gridColor: "#cbd5e1",
+    accentColor: "#1d4ed8",
+    canvasBg: "#ffffff",
+    axisTextColor: "#1e293b",
+    titleColor: "#0f172a",
+    peakColor: "#b45309",
+    lineWidth: 2.2,
+    gridWidth: 1,
+    fontScale: 1,
+  },
+  contrast: {
+    preset: "contrast",
+    pageBg: "#020617",
+    panelBg: "#111827",
+    textColor: "#f8fafc",
+    mutedColor: "#cbd5e1",
+    gridColor: "#475569",
+    accentColor: "#38bdf8",
+    canvasBg: "#020617",
+    axisTextColor: "#f8fafc",
+    titleColor: "#ffffff",
+    peakColor: "#f43f5e",
+    lineWidth: 3,
+    gridWidth: 1.5,
+    fontScale: 1.05,
+  },
+  soft: {
+    preset: "soft",
+    pageBg: "#f8fafc",
+    panelBg: "#e0f2fe",
+    textColor: "#0f172a",
+    mutedColor: "#64748b",
+    gridColor: "#94a3b8",
+    accentColor: "#7c3aed",
+    canvasBg: "#fdfcff",
+    axisTextColor: "#334155",
+    titleColor: "#312e81",
+    peakColor: "#ea580c",
+    lineWidth: 2.5,
+    gridWidth: 1,
+    fontScale: 1,
+  },
+};
+
 const state = {
   datasets: [],
   view: {
@@ -20,6 +89,7 @@ const state = {
     dragStartX: null,
     dragCurrentX: null,
   },
+  theme: { ...DEFAULT_THEME },
 };
 
 const fileInput = document.getElementById("fileInput");
@@ -34,6 +104,22 @@ const xMaxInput = document.getElementById("xMaxInput");
 const titleInput = document.getElementById("titleInput");
 const xLabelSelect = document.getElementById("xLabelSelect");
 const yLabelSelect = document.getElementById("yLabelSelect");
+const themePresetSelect = document.getElementById("themePresetSelect");
+const applyThemePresetBtn = document.getElementById("applyThemePresetBtn");
+const resetThemeBtn = document.getElementById("resetThemeBtn");
+const pageBgInput = document.getElementById("pageBgInput");
+const panelBgInput = document.getElementById("panelBgInput");
+const textColorInput = document.getElementById("textColorInput");
+const mutedColorInput = document.getElementById("mutedColorInput");
+const gridColorInput = document.getElementById("gridColorInput");
+const accentColorInput = document.getElementById("accentColorInput");
+const canvasBgInput = document.getElementById("canvasBgInput");
+const axisTextColorInput = document.getElementById("axisTextColorInput");
+const titleColorInput = document.getElementById("titleColorInput");
+const peakColorInput = document.getElementById("peakColorInput");
+const lineWidthInput = document.getElementById("lineWidthInput");
+const gridWidthInput = document.getElementById("gridWidthInput");
+const fontScaleInput = document.getElementById("fontScaleInput");
 const seriesFilter = document.getElementById("seriesFilter");
 const xDirectionSelect = document.getElementById("xDirectionSelect");
 const fileNameEl = document.getElementById("fileName");
@@ -49,6 +135,90 @@ const previewBody = document.getElementById("previewBody");
 const previewPanel = document.querySelector(".preview-panel");
 const canvas = document.getElementById("plotCanvas");
 const ctx = canvas.getContext("2d");
+
+function hexToRgb(hex) {
+  const normalized = hex.replace("#", "");
+  const full = normalized.length === 3
+    ? normalized.split("").map((char) => char + char).join("")
+    : normalized;
+  const value = Number.parseInt(full, 16);
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  };
+}
+
+function rgba(hex, alpha) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function setRootVar(name, value) {
+  document.documentElement.style.setProperty(name, value);
+}
+
+function syncThemeInputs() {
+  themePresetSelect.value = state.theme.preset;
+  pageBgInput.value = state.theme.pageBg;
+  panelBgInput.value = state.theme.panelBg;
+  textColorInput.value = state.theme.textColor;
+  mutedColorInput.value = state.theme.mutedColor;
+  gridColorInput.value = state.theme.gridColor;
+  accentColorInput.value = state.theme.accentColor;
+  canvasBgInput.value = state.theme.canvasBg;
+  axisTextColorInput.value = state.theme.axisTextColor;
+  titleColorInput.value = state.theme.titleColor;
+  peakColorInput.value = state.theme.peakColor;
+  lineWidthInput.value = String(state.theme.lineWidth);
+  gridWidthInput.value = String(state.theme.gridWidth);
+  fontScaleInput.value = String(state.theme.fontScale);
+}
+
+function applyTheme() {
+  const { pageBg, panelBg, textColor, mutedColor, gridColor, accentColor, canvasBg } = state.theme;
+  setRootVar("--bg", pageBg);
+  setRootVar("--bg-grad-top", rgba(accentColor, 0.22));
+  setRootVar("--bg-grad-bottom", rgba(pageBg, 0.98));
+  setRootVar("--panel", panelBg);
+  setRootVar("--panel-soft", rgba(panelBg, 0.88));
+  setRootVar("--ink", textColor);
+  setRootVar("--muted", mutedColor);
+  setRootVar("--line", gridColor);
+  setRootVar("--accent", accentColor);
+  setRootVar("--accent-soft", rgba(accentColor, 0.12));
+  setRootVar("--canvas-bg", canvasBg);
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", panelBg);
+  syncThemeInputs();
+}
+
+function setThemePreset(name) {
+  const preset = THEME_PRESETS[name] ?? DEFAULT_THEME;
+  state.theme = { ...preset };
+  applyTheme();
+  drawPlot();
+}
+
+function updateThemeFromControls() {
+  state.theme = {
+    preset: themePresetSelect.value,
+    pageBg: pageBgInput.value,
+    panelBg: panelBgInput.value,
+    textColor: textColorInput.value,
+    mutedColor: mutedColorInput.value,
+    gridColor: gridColorInput.value,
+    accentColor: accentColorInput.value,
+    canvasBg: canvasBgInput.value,
+    axisTextColor: axisTextColorInput.value,
+    titleColor: titleColorInput.value,
+    peakColor: peakColorInput.value,
+    lineWidth: Number(lineWidthInput.value) || DEFAULT_THEME.lineWidth,
+    gridWidth: Number(gridWidthInput.value) || DEFAULT_THEME.gridWidth,
+    fontScale: Number(fontScaleInput.value) || DEFAULT_THEME.fontScale,
+  };
+  applyTheme();
+  drawPlot();
+}
 
 function formatNumber(value) {
   if (!Number.isFinite(value)) return "-";
@@ -270,7 +440,7 @@ function drawLegend(datasets, x, y) {
     const itemY = y + index * 24;
     ctx.fillStyle = dataset.color;
     ctx.fillRect(x, itemY - 10, 18, 4);
-    ctx.fillStyle = "#cbd5e1";
+    ctx.fillStyle = state.theme.axisTextColor;
     ctx.fillText(dataset.fileName, x + 28, itemY);
   });
 }
@@ -298,27 +468,27 @@ function drawPlot() {
   const height = canvas.height;
   ctx.clearRect(0, 0, width, height);
 
-  ctx.fillStyle = "#0b1326";
+  ctx.fillStyle = state.theme.canvasBg;
   ctx.fillRect(0, 0, width, height);
 
   const margin = { top: 90, right: 48, bottom: 85, left: 95 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
-  ctx.strokeStyle = "#22304a";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = state.theme.gridColor;
+  ctx.lineWidth = state.theme.gridWidth;
   ctx.strokeRect(margin.left, margin.top, plotWidth, plotHeight);
 
-  ctx.fillStyle = "#e2e8f0";
-  ctx.font = "700 30px Inter, sans-serif";
+  ctx.fillStyle = state.theme.titleColor;
+  ctx.font = `700 ${Math.round(30 * state.theme.fontScale)}px Inter, sans-serif`;
   ctx.textAlign = "center";
   ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
 
   if (!allPoints.length) {
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "500 24px Inter, sans-serif";
+    ctx.fillStyle = state.theme.mutedColor;
+    ctx.font = `500 ${Math.round(24 * state.theme.fontScale)}px Inter, sans-serif`;
     ctx.fillText("ファイルを読み込むとここにグラフが表示されます", width / 2, height / 2 - 10);
-    ctx.font = "500 18px Inter, sans-serif";
+    ctx.font = `500 ${Math.round(18 * state.theme.fontScale)}px Inter, sans-serif`;
     ctx.fillText(".txt / .csv / .dat 対応。左のサンプル追加でも試せます。", width / 2, height / 2 + 26);
     return;
   }
@@ -329,9 +499,9 @@ function drawPlot() {
 
   const xTicks = 6;
   const yTicks = 6;
-  ctx.font = "500 18px Inter, sans-serif";
-  ctx.fillStyle = "#cbd5e1";
-  ctx.strokeStyle = "#22304a";
+  ctx.font = `500 ${Math.round(18 * state.theme.fontScale)}px Inter, sans-serif`;
+  ctx.fillStyle = state.theme.axisTextColor;
+  ctx.strokeStyle = state.theme.gridColor;
 
   for (let i = 0; i <= xTicks; i += 1) {
     const t = i / xTicks;
@@ -363,7 +533,7 @@ function drawPlot() {
 
   datasets.forEach((dataset) => {
     ctx.strokeStyle = dataset.color;
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = state.theme.lineWidth;
     ctx.beginPath();
     dataset.data.forEach((point, index) => {
       const px = mapX(point.x);
@@ -381,14 +551,14 @@ function drawPlot() {
   if (peakPoint) {
     const peakPx = mapX(peakPoint.x);
     const peakPy = mapY(peakPoint.y);
-    ctx.strokeStyle = "#34d399";
+    ctx.strokeStyle = state.theme.accentColor;
     ctx.setLineDash([6, 6]);
     ctx.beginPath();
     ctx.moveTo(peakPx, margin.top);
     ctx.lineTo(peakPx, margin.top + plotHeight);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#fbbf24";
+    ctx.fillStyle = state.theme.peakColor;
     ctx.beginPath();
     ctx.arc(peakPx, peakPy, 6, 0, Math.PI * 2);
     ctx.fill();
@@ -399,14 +569,14 @@ function drawPlot() {
   if (state.interaction.dragStartX !== null && state.interaction.dragCurrentX !== null) {
     const left = Math.min(state.interaction.dragStartX, state.interaction.dragCurrentX);
     const widthRect = Math.abs(state.interaction.dragCurrentX - state.interaction.dragStartX);
-    ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+    ctx.fillStyle = rgba(state.theme.accentColor, 0.2);
     ctx.fillRect(left, margin.top, widthRect, plotHeight);
-    ctx.strokeStyle = "rgba(96, 165, 250, 0.9)";
+    ctx.strokeStyle = rgba(state.theme.accentColor, 0.9);
     ctx.strokeRect(left, margin.top, widthRect, plotHeight);
   }
 
-  ctx.fillStyle = "#e2e8f0";
-  ctx.font = "600 22px Inter, sans-serif";
+  ctx.fillStyle = state.theme.axisTextColor;
+  ctx.font = `600 ${Math.round(22 * state.theme.fontScale)}px Inter, sans-serif`;
   ctx.textAlign = "center";
   ctx.fillText(xLabelSelect.value, width / 2, height - 24);
 
@@ -597,6 +767,19 @@ xDirectionSelect.addEventListener("change", (event) => {
   renderAll();
 });
 
+applyThemePresetBtn.addEventListener("click", () => {
+  setThemePreset(themePresetSelect.value);
+});
+
+resetThemeBtn.addEventListener("click", () => {
+  setThemePreset(DEFAULT_THEME.preset);
+});
+
+[themePresetSelect, pageBgInput, panelBgInput, textColorInput, mutedColorInput, gridColorInput, accentColorInput, canvasBgInput, axisTextColorInput, titleColorInput, peakColorInput, lineWidthInput, gridWidthInput, fontScaleInput].forEach((input) => {
+  input.addEventListener("input", updateThemeFromControls);
+  input.addEventListener("change", updateThemeFromControls);
+});
+
 [titleInput, xLabelSelect, yLabelSelect].forEach((input) => {
   input.addEventListener("input", drawPlot);
   input.addEventListener("change", drawPlot);
@@ -649,4 +832,5 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+applyTheme();
 renderAll();

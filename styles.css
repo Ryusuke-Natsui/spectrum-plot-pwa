@@ -1,5 +1,7 @@
 :root {
   --bg: #0b1120;
+  --bg-grad-top: #16213a;
+  --bg-grad-bottom: #050814;
   --panel: #0f172a;
   --panel-soft: #111c33;
   --ink: #e2e8f0;
@@ -10,6 +12,7 @@
   --success: #22c55e;
   --warning: #f59e0b;
   --shadow: 0 18px 45px rgba(2, 6, 23, 0.32);
+  --canvas-bg: #0b1326;
 }
 
 * {
@@ -20,7 +23,7 @@ body {
   margin: 0;
   font-family: Inter, "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--ink);
-  background: radial-gradient(circle at top, #16213a 0%, #0b1120 48%, #050814 100%);
+  background: radial-gradient(circle at top, var(--bg-grad-top) 0%, var(--bg) 48%, var(--bg-grad-bottom) 100%);
 }
 
 .hero {
@@ -65,7 +68,7 @@ h2 {
 }
 
 .panel {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(15, 23, 42, 0.92) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 98%, white 2%) 0%, color-mix(in srgb, var(--panel) 92%, transparent 8%) 100%);
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 20px;
   box-shadow: var(--shadow);
@@ -99,7 +102,7 @@ h2 {
   place-items: center;
   border: 1px dashed rgba(96, 165, 250, 0.6);
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.7);
+  background: color-mix(in srgb, var(--panel) 70%, transparent 30%);
   min-height: 180px;
   padding: 24px;
   cursor: pointer;
@@ -111,7 +114,7 @@ h2 {
 .dropzone.dragover {
   transform: translateY(-1px);
   border-color: var(--accent);
-  background: rgba(30, 41, 59, 0.92);
+  background: color-mix(in srgb, var(--panel-soft) 92%, transparent 8%);
 }
 
 .dropzone input {
@@ -171,6 +174,32 @@ button:disabled {
   gap: 12px;
 }
 
+input[type="color"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px;
+  background: var(--canvas-bg);
+}
+
+.design-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.design-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+
+#applyThemePresetBtn {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+#resetThemeBtn {
+  background: #334155;
+}
+
 label span {
   display: block;
   font-size: 0.88rem;
@@ -183,14 +212,14 @@ input[type="number"],
 select {
   width: 100%;
   padding: 11px 12px;
-  background: #0b1326;
+  background: var(--canvas-bg);
   color: var(--ink);
 }
 
 .status-box {
   padding: 16px;
   border-radius: 16px;
-  background: rgba(11, 19, 38, 0.9);
+  background: color-mix(in srgb, var(--canvas-bg) 90%, transparent 10%);
   border: 1px solid var(--line);
 }
 
@@ -219,7 +248,7 @@ select {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(15, 23, 42, 0.9);
+  background: color-mix(in srgb, var(--panel) 90%, transparent 10%);
   border: 1px solid var(--line);
 }
 
@@ -300,7 +329,7 @@ select {
   overflow: hidden;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: #0b1326;
+  background: var(--canvas-bg);
 }
 
 canvas {
@@ -327,7 +356,7 @@ canvas {
   padding: 14px;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: rgba(11, 19, 38, 0.9);
+  background: color-mix(in srgb, var(--canvas-bg) 90%, transparent 10%);
 }
 
 .summary-card strong,
@@ -349,7 +378,7 @@ canvas {
 table {
   width: 100%;
   border-collapse: collapse;
-  background: rgba(11, 19, 38, 0.9);
+  background: color-mix(in srgb, var(--canvas-bg) 90%, transparent 10%);
 }
 
 th,
@@ -361,7 +390,7 @@ td {
 }
 
 th {
-  background: rgba(15, 23, 42, 1);
+  background: var(--panel);
 }
 
 .footer {
@@ -394,7 +423,8 @@ th {
     width: 100%;
   }
 
-  .status-grid {
+  .status-grid,
+  .design-grid {
     grid-template-columns: 1fr;
   }
 }
