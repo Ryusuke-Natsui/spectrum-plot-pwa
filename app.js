@@ -20,8 +20,8 @@ const dropzone = document.getElementById("dropzone");
 const loadSampleBtn = document.getElementById("loadSampleBtn");
 const clearFilesBtn = document.getElementById("clearFilesBtn");
 const downloadPngBtn = document.getElementById("downloadPngBtn");
-const xLabelInput = document.getElementById("xLabelInput");
-const yLabelInput = document.getElementById("yLabelInput");
+const xLabelSelect = document.getElementById("xLabelSelect");
+const yLabelSelect = document.getElementById("yLabelSelect");
 const fileNameEl = document.getElementById("fileName");
 const pointCountEl = document.getElementById("pointCount");
 const xRangeEl = document.getElementById("xRange");
@@ -172,7 +172,7 @@ function drawPlot() {
   ctx.fillStyle = "#0f172a";
   ctx.font = `700 30px ${CANVAS_FONT_STACK}`;
   ctx.textAlign = "center";
-  ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
+  ctx.fillText("Spectrum", width / 2, 42);
 
   if (!allPoints.length) {
     ctx.fillStyle = "#64748b";
@@ -354,11 +354,9 @@ downloadPngBtn.addEventListener("click", () => {
   link.click();
 });
 
-[xLabelInput, yLabelInput].forEach((input) => {
-  input.addEventListener("input", drawPlot);
+[xLabelSelect, yLabelSelect].forEach((input) => {
+  input.addEventListener("change", drawPlot);
 });
-
-titleInput.addEventListener("input", drawPlot);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
