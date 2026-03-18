@@ -28,6 +28,9 @@ const loadSampleBtn = document.getElementById("loadSampleBtn");
 const clearFilesBtn = document.getElementById("clearFilesBtn");
 const downloadPngBtn = document.getElementById("downloadPngBtn");
 const resetZoomBtn = document.getElementById("resetZoomBtn");
+const applyRangeBtn = document.getElementById("applyRangeBtn");
+const xMinInput = document.getElementById("xMinInput");
+const xMaxInput = document.getElementById("xMaxInput");
 const titleInput = document.getElementById("titleInput");
 const xLabelSelect = document.getElementById("xLabelSelect");
 const yLabelSelect = document.getElementById("yLabelSelect");
@@ -97,6 +100,24 @@ function getVisiblePoints() {
   return getFilteredDatasets().flatMap((dataset) => dataset.data);
 }
 
+function getEffectiveXDomain(points = getVisiblePoints()) {
+  if (!points.length) return null;
+  const xs = points.map((point) => point.x);
+  const xMin = Math.min(...xs);
+  const xMax = Math.max(...xs);
+  const xPad = (xMax - xMin || 1) * 0.03;
+  const fallbackDomain = [xMin - xPad, xMax + xPad];
+  const zoomDomain = state.view.zoomDomain ?? fallbackDomain;
+  return [Math.min(...zoomDomain), Math.max(...zoomDomain)];
+}
+
+function getPointsInDomain(points, domain = getEffectiveXDomain(points)) {
+  if (!points.length || !domain) return points;
+  const [x0, x1] = domain;
+  const filtered = points.filter((point) => point.x >= x0 && point.x <= x1);
+  return filtered.length ? filtered : points;
+}
+
 function getPeakPoint(points) {
   if (!points.length) return null;
   return points.reduce((peak, point) => (point.y > peak.y ? point : peak), points[0]);
@@ -152,10 +173,7 @@ function updateSummary() {
     return;
   }
 
-  const visiblePoints = state.view.zoomDomain
-    ? allVisiblePoints.filter((point) => point.x >= state.view.zoomDomain[0] && point.x <= state.view.zoomDomain[1])
-    : allVisiblePoints;
-  const effectivePoints = visiblePoints.length ? visiblePoints : allVisiblePoints;
+  const effectivePoints = getPointsInDomain(allVisiblePoints);
   const xs = effectivePoints.map((point) => point.x);
   const ys = effectivePoints.map((point) => point.y);
   const xMin = Math.min(...xs);
@@ -199,7 +217,7 @@ function renderPreviewSummary() {
 
   const allVisiblePoints = getVisiblePoints();
   const datasets = getFilteredDatasets();
-  const peakPoint = getPeakPoint(allVisiblePoints);
+  const peakPoint = getPeakPoint(getPointsInDomain(allVisiblePoints));
   const summary = document.createElement("div");
   summary.className = "table-summary";
   summary.innerHTML = `
@@ -258,20 +276,16 @@ function drawLegend(datasets, x, y) {
 }
 
 function getPlotBounds(allPoints) {
-  const xs = allPoints.map((point) => point.x);
-  const ys = allPoints.map((point) => point.y);
-  const xMin = Math.min(...xs);
-  const xMax = Math.max(...xs);
+  const xDomain = getEffectiveXDomain(allPoints);
+  const pointsInDomain = getPointsInDomain(allPoints, xDomain);
+  const ys = pointsInDomain.map((point) => point.y);
   const yMin = Math.min(...ys);
   const yMax = Math.max(...ys);
-  const xPad = (xMax - xMin || 1) * 0.03;
   const yPad = (yMax - yMin || 1) * 0.08;
-  const fallbackDomain = [xMin - xPad, xMax + xPad];
-  const zoomDomain = state.view.zoomDomain ?? fallbackDomain;
 
   return {
-    x0: Math.min(...zoomDomain),
-    x1: Math.max(...zoomDomain),
+    x0: xDomain[0],
+    x1: xDomain[1],
     y0: yMin - yPad,
     y1: yMax + yPad,
   };
@@ -298,7 +312,7 @@ function drawPlot() {
   ctx.fillStyle = "#e2e8f0";
   ctx.font = "700 30px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Spectrum", width / 2, 42);
+  ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
 
   if (!allPoints.length) {
     ctx.fillStyle = "#94a3b8";
@@ -404,12 +418,23 @@ function drawPlot() {
   ctx.restore();
 }
 
+function syncRangeInputs() {
+  const domain = getEffectiveXDomain();
+  const hasDomain = Boolean(domain);
+  xMinInput.value = hasDomain ? domain[0].toFixed(4) : "";
+  xMaxInput.value = hasDomain ? domain[1].toFixed(4) : "";
+  xMinInput.disabled = !hasDomain;
+  xMaxInput.disabled = !hasDomain;
+  applyRangeBtn.disabled = !hasDomain;
+}
+
 function renderAll() {
   syncSeriesFilterOptions();
   updateSummary();
   updateSeriesList();
   updatePreview();
   drawPlot();
+  syncRangeInputs();
   const hasData = state.datasets.length > 0;
   downloadPngBtn.disabled = !hasData;
   clearFilesBtn.disabled = !hasData;
@@ -525,9 +550,39 @@ downloadPngBtn.addEventListener("click", () => {
   link.click();
 });
 
+function applyManualRange() {
+  const points = getVisiblePoints();
+  if (!points.length) return;
+
+  const minValue = Number(xMinInput.value);
+  const maxValue = Number(xMaxInput.value);
+  if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) {
+    window.alert("X範囲には数値を入力してください。");
+    syncRangeInputs();
+    return;
+  }
+  if (minValue === maxValue) {
+    window.alert("X範囲の最小値と最大値は異なる値にしてください。");
+    return;
+  }
+
+  state.view.zoomDomain = [Math.min(minValue, maxValue), Math.max(minValue, maxValue)];
+  renderAll();
+}
+
 resetZoomBtn.addEventListener("click", () => {
   state.view.zoomDomain = null;
   renderAll();
+});
+
+applyRangeBtn.addEventListener("click", applyManualRange);
+[xMinInput, xMaxInput].forEach((input) => {
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      applyManualRange();
+    }
+  });
 });
 
 seriesFilter.addEventListener("change", (event) => {

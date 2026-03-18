@@ -112,13 +112,26 @@
               </select>
             </label>
           </div>
-          <button id="resetZoomBtn" type="button" disabled>Reset zoom</button>
+          <div class="toolbar-actions">
+            <div class="range-controls">
+              <label>
+                <span>X min</span>
+                <input id="xMinInput" type="number" step="any" inputmode="decimal" placeholder="開始値" disabled />
+              </label>
+              <label>
+                <span>X max</span>
+                <input id="xMaxInput" type="number" step="any" inputmode="decimal" placeholder="終了値" disabled />
+              </label>
+              <button id="applyRangeBtn" type="button" disabled>範囲を適用</button>
+            </div>
+            <button id="resetZoomBtn" type="button" disabled>Reset zoom</button>
+          </div>
         </div>
         <div class="canvas-wrap">
           <canvas id="plotCanvas" width="1200" height="720" aria-label="plot"></canvas>
         </div>
         <p class="chart-hint">
-          ヒント: 系列を絞り込んで比較できます。グラフ上を左右にドラッグするとズーム、Reset zoom で解除します。
+          ヒント: 系列を絞り込んで比較できます。グラフ上を左右にドラッグするとX範囲を選択し、その範囲に合わせてY軸も自動調整されます。数値入力での範囲指定や Reset zoom にも対応しています。
         </p>
       </section>
 
