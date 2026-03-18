@@ -293,6 +293,38 @@ function getPeakPoint(points) {
   return points.reduce((peak, point) => (point.y > peak.y ? point : peak), points[0]);
 }
 
+function getPeakPoints(points, domain = getEffectiveXDomain(points)) {
+  if (!points.length) return [];
+
+  const visiblePoints = getPointsInDomain(points, domain)
+    .slice()
+    .sort((a, b) => a.x - b.x);
+
+  if (visiblePoints.length === 1) return [visiblePoints[0]];
+  if (visiblePoints.length === 2) {
+    const peakPoint = getPeakPoint(visiblePoints);
+    return peakPoint ? [peakPoint] : [];
+  }
+
+  const peaks = [];
+  for (let i = 1; i < visiblePoints.length - 1; i += 1) {
+    const previous = visiblePoints[i - 1];
+    const current = visiblePoints[i];
+    const next = visiblePoints[i + 1];
+
+    if (current.y > previous.y && current.y >= next.y) {
+      peaks.push(current);
+    }
+  }
+
+  if (!peaks.length) {
+    const peakPoint = getPeakPoint(visiblePoints);
+    return peakPoint ? [peakPoint] : [];
+  }
+
+  return peaks;
+}
+
 function estimateXStep(points) {
   if (points.length < 2) return null;
   const sortedXs = [...new Set(points.map((point) => point.x))].sort((a, b) => a - b);
@@ -545,24 +577,15 @@ function drawPlot() {
       }
     });
     ctx.stroke();
-  });
 
-  const peakPoint = getPeakPoint(allPoints.filter((point) => point.x >= x0 && point.x <= x1));
-  if (peakPoint) {
-    const peakPx = mapX(peakPoint.x);
-    const peakPy = mapY(peakPoint.y);
-    ctx.strokeStyle = state.theme.accentColor;
-    ctx.setLineDash([6, 6]);
-    ctx.beginPath();
-    ctx.moveTo(peakPx, margin.top);
-    ctx.lineTo(peakPx, margin.top + plotHeight);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = state.theme.peakColor;
-    ctx.beginPath();
-    ctx.arc(peakPx, peakPy, 6, 0, Math.PI * 2);
-    ctx.fill();
-  }
+    const peakPoints = getPeakPoints(dataset.data, [x0, x1]);
+    peakPoints.forEach((peakPoint) => {
+      ctx.fillStyle = state.theme.peakColor;
+      ctx.beginPath();
+      ctx.arc(mapX(peakPoint.x), mapY(peakPoint.y), 6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  });
 
   drawLegend(datasets, margin.left, 68);
 
