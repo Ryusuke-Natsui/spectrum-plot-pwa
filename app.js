@@ -106,6 +106,75 @@ const PLOT_THEME_PRESETS = {
   },
 };
 
+const DEFAULT_THEME = {
+  preset: "midnight",
+  pageBg: "#0b1120",
+  panelBg: "#0f172a",
+  textColor: "#e2e8f0",
+  mutedColor: "#94a3b8",
+  gridColor: "#22304a",
+  accentColor: "#3b82f6",
+  canvasBg: "#0b1326",
+  axisTextColor: "#cbd5e1",
+  titleColor: "#e2e8f0",
+  peakColor: "#fbbf24",
+  lineWidth: 2.5,
+  gridWidth: 1,
+  fontScale: 1,
+};
+
+const THEME_PRESETS = {
+  midnight: { ...DEFAULT_THEME },
+  paper: {
+    preset: "paper",
+    pageBg: "#f8fafc",
+    panelBg: "#ffffff",
+    textColor: "#0f172a",
+    mutedColor: "#475569",
+    gridColor: "#cbd5e1",
+    accentColor: "#1d4ed8",
+    canvasBg: "#ffffff",
+    axisTextColor: "#1e293b",
+    titleColor: "#0f172a",
+    peakColor: "#b45309",
+    lineWidth: 2.2,
+    gridWidth: 1,
+    fontScale: 1,
+  },
+  contrast: {
+    preset: "contrast",
+    pageBg: "#020617",
+    panelBg: "#111827",
+    textColor: "#f8fafc",
+    mutedColor: "#cbd5e1",
+    gridColor: "#475569",
+    accentColor: "#38bdf8",
+    canvasBg: "#020617",
+    axisTextColor: "#f8fafc",
+    titleColor: "#ffffff",
+    peakColor: "#f43f5e",
+    lineWidth: 3,
+    gridWidth: 1.5,
+    fontScale: 1.05,
+  },
+  soft: {
+    preset: "soft",
+    pageBg: "#f8fafc",
+    panelBg: "#e0f2fe",
+    textColor: "#0f172a",
+    mutedColor: "#64748b",
+    gridColor: "#94a3b8",
+    accentColor: "#7c3aed",
+    canvasBg: "#fdfcff",
+    axisTextColor: "#334155",
+    titleColor: "#312e81",
+    peakColor: "#ea580c",
+    lineWidth: 2.5,
+    gridWidth: 1,
+    fontScale: 1,
+  },
+};
+
 const state = {
   datasets: [],
   view: {
@@ -305,6 +374,38 @@ function getPointsInDomain(points, domain = getEffectiveXDomain(points)) {
 function getPeakPoint(points) {
   if (!points.length) return null;
   return points.reduce((peak, point) => (point.y > peak.y ? point : peak), points[0]);
+}
+
+function getPeakPoints(points, domain = getEffectiveXDomain(points)) {
+  if (!points.length) return [];
+
+  const visiblePoints = getPointsInDomain(points, domain)
+    .slice()
+    .sort((a, b) => a.x - b.x);
+
+  if (visiblePoints.length === 1) return [visiblePoints[0]];
+  if (visiblePoints.length === 2) {
+    const peakPoint = getPeakPoint(visiblePoints);
+    return peakPoint ? [peakPoint] : [];
+  }
+
+  const peaks = [];
+  for (let i = 1; i < visiblePoints.length - 1; i += 1) {
+    const previous = visiblePoints[i - 1];
+    const current = visiblePoints[i];
+    const next = visiblePoints[i + 1];
+
+    if (current.y > previous.y && current.y >= next.y) {
+      peaks.push(current);
+    }
+  }
+
+  if (!peaks.length) {
+    const peakPoint = getPeakPoint(visiblePoints);
+    return peakPoint ? [peakPoint] : [];
+  }
+
+  return peaks;
 }
 
 function estimateXStep(points) {
@@ -562,7 +663,6 @@ function drawPlot() {
       }
     });
     ctx.stroke();
-  });
 
   const peakPoint = getPeakPoint(allPoints.filter((point) => point.x >= x0 && point.x <= x1));
   if (peakPoint) {
