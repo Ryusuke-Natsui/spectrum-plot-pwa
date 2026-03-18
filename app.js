@@ -246,13 +246,13 @@ function drawPlot() {
   ctx.fillStyle = "#0f172a";
   ctx.font = "600 22px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(xLabelInput.value || "X", width / 2, height - 24);
+  ctx.fillText(xLabelSelect.value || "Raman shift (cm−1)", width / 2, height - 24);
 
   ctx.save();
   ctx.translate(26, height / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = "center";
-  ctx.fillText(yLabelInput.value || "Intensity", 0, 0);
+  ctx.fillText(yLabelSelect.value || "Intensity (counts)", 0, 0);
   ctx.restore();
 }
 
@@ -350,6 +350,8 @@ downloadPngBtn.addEventListener("click", () => {
 [xLabelInput, yLabelInput].forEach((input) => {
   input.addEventListener("input", drawPlot);
 });
+
+titleInput.addEventListener("input", drawPlot);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
