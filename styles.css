@@ -15,7 +15,7 @@
 
 body {
   margin: 0;
-  font-family: Inter, "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: Arial, "Helvetica Neue", "Noto Sans JP", sans-serif;
   color: var(--ink);
   background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
 }

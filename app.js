@@ -13,6 +13,8 @@ const state = {
   datasets: [],
 };
 
+const CANVAS_FONT_STACK = "Arial, \"Helvetica Neue\", \"Noto Sans JP\", sans-serif";
+
 const fileInput = document.getElementById("fileInput");
 const dropzone = document.getElementById("dropzone");
 const loadSampleBtn = document.getElementById("loadSampleBtn");
@@ -138,7 +140,7 @@ function updatePreview() {
 }
 
 function drawLegend(datasets, x, y) {
-  ctx.font = "500 16px Inter, sans-serif";
+  ctx.font = `500 16px ${CANVAS_FONT_STACK}`;
   ctx.textAlign = "left";
 
   datasets.forEach((dataset, index) => {
@@ -169,13 +171,13 @@ function drawPlot() {
   ctx.strokeRect(margin.left, margin.top, plotWidth, plotHeight);
 
   ctx.fillStyle = "#0f172a";
-  ctx.font = "700 30px Inter, sans-serif";
+  ctx.font = `700 30px ${CANVAS_FONT_STACK}`;
   ctx.textAlign = "center";
   ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
 
   if (!allPoints.length) {
     ctx.fillStyle = "#64748b";
-    ctx.font = "500 24px Inter, sans-serif";
+    ctx.font = `500 24px ${CANVAS_FONT_STACK}`;
     ctx.fillText("ここにグラフが表示されます", width / 2, height / 2);
     return;
   }
@@ -199,7 +201,7 @@ function drawPlot() {
 
   const xTicks = 6;
   const yTicks = 6;
-  ctx.font = "500 18px Inter, sans-serif";
+  ctx.font = `500 18px ${CANVAS_FONT_STACK}`;
   ctx.fillStyle = "#334155";
   ctx.strokeStyle = "#cbd5e1";
 
@@ -250,7 +252,7 @@ function drawPlot() {
   drawLegend(datasets, margin.left, 68);
 
   ctx.fillStyle = "#0f172a";
-  ctx.font = "600 22px Inter, sans-serif";
+  ctx.font = `600 22px ${CANVAS_FONT_STACK}`;
   ctx.textAlign = "center";
   ctx.fillText(xLabelInput.value || "X", width / 2, height - 24);
 
