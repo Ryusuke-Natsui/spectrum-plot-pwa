@@ -178,7 +178,7 @@ input[type="color"] {
   width: 100%;
   min-height: 44px;
   padding: 6px;
-  background: var(--canvas-bg);
+  background: #0b1326;
 }
 
 .design-grid {
@@ -192,11 +192,11 @@ input[type="color"] {
   grid-column: 1 / -1;
 }
 
-#applyThemePresetBtn {
+#applyPlotThemePresetBtn {
   background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
 }
 
-#resetThemeBtn {
+#resetPlotThemeBtn {
   background: #334155;
 }
 

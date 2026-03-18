@@ -72,56 +72,57 @@
           </section>
 
           <section class="workflow-section">
-            <h2>3. デザインを切り替え</h2>
+            <h2>3. プロットの見た目を調整</h2>
             <div class="field-grid design-grid">
               <label>
-                <span>テーマプリセット</span>
-                <select id="themePresetSelect">
-                  <option value="midnight">Midnight lab</option>
+                <span>プロットプリセット</span>
+                <select id="plotThemePresetSelect">
+                  <option value="dark">Dark screen</option>
                   <option value="paper">Paper ready</option>
-                  <option value="contrast">High contrast</option>
-                  <option value="soft">Soft pastel</option>
+                  <option value="mono">Monochrome</option>
+                  <option value="presentation">Presentation</option>
+                </select>
+              </label>
+              <label>
+                <span>線色セット</span>
+                <select id="seriesPaletteSelect">
+                  <option value="default">Default</option>
+                  <option value="paper">Paper colorblind-safe</option>
+                  <option value="mono">Monochrome</option>
+                  <option value="warm">Warm</option>
                 </select>
               </label>
               <div class="design-actions">
-                <button id="applyThemePresetBtn" type="button">プリセットを適用</button>
-                <button id="resetThemeBtn" type="button">初期デザインに戻す</button>
+                <button id="applyPlotThemePresetBtn" type="button">プリセットを適用</button>
+                <button id="resetPlotThemeBtn" type="button">初期設定に戻す</button>
               </div>
               <label>
-                <span>ページ背景</span>
-                <input id="pageBgInput" type="color" value="#0b1120" />
+                <span>画像全体の背景</span>
+                <input id="canvasBgInput" type="color" value="#0b1326" />
               </label>
               <label>
-                <span>パネル背景</span>
-                <input id="panelBgInput" type="color" value="#0f172a" />
+                <span>プロット領域の背景</span>
+                <input id="plotAreaBgInput" type="color" value="#0f172a" />
               </label>
               <label>
-                <span>テキスト色</span>
-                <input id="textColorInput" type="color" value="#e2e8f0" />
+                <span>タイトル色</span>
+                <input id="titleColorInput" type="color" value="#e2e8f0" />
               </label>
               <label>
-                <span>補助テキスト色</span>
-                <input id="mutedColorInput" type="color" value="#94a3b8" />
+                <span>軸・凡例の文字色</span>
+                <input id="axisTextColorInput" type="color" value="#cbd5e1" />
               </label>
               <label>
                 <span>グリッド線</span>
                 <input id="gridColorInput" type="color" value="#22304a" />
               </label>
               <label>
-                <span>アクセント色</span>
-                <input id="accentColorInput" type="color" value="#3b82f6" />
+                <span>枠線</span>
+                <input id="borderColorInput" type="color" value="#475569" />
               </label>
               <label>
-                <span>キャンバス背景</span>
-                <input id="canvasBgInput" type="color" value="#0b1326" />
-              </label>
-              <label>
-                <span>凡例・軸ラベル色</span>
-                <input id="axisTextColorInput" type="color" value="#cbd5e1" />
-              </label>
-              <label>
-                <span>タイトル色</span>
-                <input id="titleColorInput" type="color" value="#e2e8f0" />
+                <span>ピークガイド線</span>
+                <input id="accentColorInput" type="color" value="#34d399" />
               </label>
               <label>
                 <span>ピークマーカー色</span>
@@ -137,11 +138,11 @@
               </label>
               <label>
                 <span>フォント倍率</span>
-                <input id="fontScaleInput" type="number" min="0.8" max="1.4" step="0.05" value="1" />
+                <input id="fontScaleInput" type="number" min="0.8" max="1.5" step="0.05" value="1" />
               </label>
             </div>
             <p class="hint inline-hint">
-              Paper ready は白背景・濃色線を使い、論文やスライドへ貼り込みやすい配色に切り替えます。色や線幅はさらに個別調整できます。
+              ここで変わるのはPNG出力にも反映されるプロット画像の見た目だけです。PWA本体の背景やパネルデザインは変更しません。
             </p>
           </section>
 

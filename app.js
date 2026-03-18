@@ -1,13 +1,110 @@
-const SERIES_COLORS = [
-  "#60a5fa",
-  "#f87171",
-  "#34d399",
-  "#c084fc",
-  "#fbbf24",
-  "#22d3ee",
-  "#fb7185",
-  "#a3e635",
-];
+const DEFAULT_PLOT_THEME = {
+  preset: "dark",
+  palette: "default",
+  canvasBg: "#0b1326",
+  plotAreaBg: "#0f172a",
+  titleColor: "#e2e8f0",
+  axisTextColor: "#cbd5e1",
+  gridColor: "#22304a",
+  borderColor: "#475569",
+  accentColor: "#34d399",
+  peakColor: "#fbbf24",
+  lineWidth: 2.5,
+  gridWidth: 1,
+  fontScale: 1,
+};
+
+const SERIES_PALETTES = {
+  default: [
+    "#60a5fa",
+    "#f87171",
+    "#34d399",
+    "#c084fc",
+    "#fbbf24",
+    "#22d3ee",
+    "#fb7185",
+    "#a3e635",
+  ],
+  paper: [
+    "#1d4ed8",
+    "#dc2626",
+    "#059669",
+    "#7c3aed",
+    "#b45309",
+    "#0f766e",
+    "#be185d",
+    "#4d7c0f",
+  ],
+  mono: [
+    "#111827",
+    "#374151",
+    "#4b5563",
+    "#6b7280",
+    "#9ca3af",
+    "#d1d5db",
+    "#334155",
+    "#94a3b8",
+  ],
+  warm: [
+    "#ef4444",
+    "#f97316",
+    "#f59e0b",
+    "#eab308",
+    "#84cc16",
+    "#14b8a6",
+    "#ec4899",
+    "#8b5cf6",
+  ],
+};
+
+const PLOT_THEME_PRESETS = {
+  dark: { ...DEFAULT_PLOT_THEME },
+  paper: {
+    preset: "paper",
+    palette: "paper",
+    canvasBg: "#ffffff",
+    plotAreaBg: "#ffffff",
+    titleColor: "#0f172a",
+    axisTextColor: "#1e293b",
+    gridColor: "#cbd5e1",
+    borderColor: "#64748b",
+    accentColor: "#1d4ed8",
+    peakColor: "#b45309",
+    lineWidth: 2.2,
+    gridWidth: 1,
+    fontScale: 1,
+  },
+  mono: {
+    preset: "mono",
+    palette: "mono",
+    canvasBg: "#ffffff",
+    plotAreaBg: "#f8fafc",
+    titleColor: "#111827",
+    axisTextColor: "#111827",
+    gridColor: "#d1d5db",
+    borderColor: "#4b5563",
+    accentColor: "#111827",
+    peakColor: "#6b7280",
+    lineWidth: 2.2,
+    gridWidth: 1,
+    fontScale: 1,
+  },
+  presentation: {
+    preset: "presentation",
+    palette: "warm",
+    canvasBg: "#0b1020",
+    plotAreaBg: "#111827",
+    titleColor: "#f8fafc",
+    axisTextColor: "#e5e7eb",
+    gridColor: "#334155",
+    borderColor: "#94a3b8",
+    accentColor: "#22d3ee",
+    peakColor: "#f59e0b",
+    lineWidth: 3,
+    gridWidth: 1.2,
+    fontScale: 1.08,
+  },
+};
 
 const DEFAULT_THEME = {
   preset: "midnight",
@@ -89,7 +186,7 @@ const state = {
     dragStartX: null,
     dragCurrentX: null,
   },
-  theme: { ...DEFAULT_THEME },
+  plotTheme: { ...DEFAULT_PLOT_THEME },
 };
 
 const fileInput = document.getElementById("fileInput");
@@ -104,18 +201,17 @@ const xMaxInput = document.getElementById("xMaxInput");
 const titleInput = document.getElementById("titleInput");
 const xLabelSelect = document.getElementById("xLabelSelect");
 const yLabelSelect = document.getElementById("yLabelSelect");
-const themePresetSelect = document.getElementById("themePresetSelect");
-const applyThemePresetBtn = document.getElementById("applyThemePresetBtn");
-const resetThemeBtn = document.getElementById("resetThemeBtn");
-const pageBgInput = document.getElementById("pageBgInput");
-const panelBgInput = document.getElementById("panelBgInput");
-const textColorInput = document.getElementById("textColorInput");
-const mutedColorInput = document.getElementById("mutedColorInput");
-const gridColorInput = document.getElementById("gridColorInput");
-const accentColorInput = document.getElementById("accentColorInput");
+const plotThemePresetSelect = document.getElementById("plotThemePresetSelect");
+const seriesPaletteSelect = document.getElementById("seriesPaletteSelect");
+const applyPlotThemePresetBtn = document.getElementById("applyPlotThemePresetBtn");
+const resetPlotThemeBtn = document.getElementById("resetPlotThemeBtn");
 const canvasBgInput = document.getElementById("canvasBgInput");
-const axisTextColorInput = document.getElementById("axisTextColorInput");
+const plotAreaBgInput = document.getElementById("plotAreaBgInput");
 const titleColorInput = document.getElementById("titleColorInput");
+const axisTextColorInput = document.getElementById("axisTextColorInput");
+const gridColorInput = document.getElementById("gridColorInput");
+const borderColorInput = document.getElementById("borderColorInput");
+const accentColorInput = document.getElementById("accentColorInput");
 const peakColorInput = document.getElementById("peakColorInput");
 const lineWidthInput = document.getElementById("lineWidthInput");
 const gridWidthInput = document.getElementById("gridWidthInput");
@@ -154,70 +250,57 @@ function rgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function setRootVar(name, value) {
-  document.documentElement.style.setProperty(name, value);
+function applySeriesPalette(name = state.plotTheme.palette) {
+  const palette = SERIES_PALETTES[name] ?? SERIES_PALETTES.default;
+  state.datasets = state.datasets.map((dataset, index) => ({
+    ...dataset,
+    color: palette[index % palette.length],
+  }));
 }
 
-function syncThemeInputs() {
-  themePresetSelect.value = state.theme.preset;
-  pageBgInput.value = state.theme.pageBg;
-  panelBgInput.value = state.theme.panelBg;
-  textColorInput.value = state.theme.textColor;
-  mutedColorInput.value = state.theme.mutedColor;
-  gridColorInput.value = state.theme.gridColor;
-  accentColorInput.value = state.theme.accentColor;
-  canvasBgInput.value = state.theme.canvasBg;
-  axisTextColorInput.value = state.theme.axisTextColor;
-  titleColorInput.value = state.theme.titleColor;
-  peakColorInput.value = state.theme.peakColor;
-  lineWidthInput.value = String(state.theme.lineWidth);
-  gridWidthInput.value = String(state.theme.gridWidth);
-  fontScaleInput.value = String(state.theme.fontScale);
+function syncPlotThemeInputs() {
+  plotThemePresetSelect.value = state.plotTheme.preset;
+  seriesPaletteSelect.value = state.plotTheme.palette;
+  canvasBgInput.value = state.plotTheme.canvasBg;
+  plotAreaBgInput.value = state.plotTheme.plotAreaBg;
+  titleColorInput.value = state.plotTheme.titleColor;
+  axisTextColorInput.value = state.plotTheme.axisTextColor;
+  gridColorInput.value = state.plotTheme.gridColor;
+  borderColorInput.value = state.plotTheme.borderColor;
+  accentColorInput.value = state.plotTheme.accentColor;
+  peakColorInput.value = state.plotTheme.peakColor;
+  lineWidthInput.value = String(state.plotTheme.lineWidth);
+  gridWidthInput.value = String(state.plotTheme.gridWidth);
+  fontScaleInput.value = String(state.plotTheme.fontScale);
 }
 
-function applyTheme() {
-  const { pageBg, panelBg, textColor, mutedColor, gridColor, accentColor, canvasBg } = state.theme;
-  setRootVar("--bg", pageBg);
-  setRootVar("--bg-grad-top", rgba(accentColor, 0.22));
-  setRootVar("--bg-grad-bottom", rgba(pageBg, 0.98));
-  setRootVar("--panel", panelBg);
-  setRootVar("--panel-soft", rgba(panelBg, 0.88));
-  setRootVar("--ink", textColor);
-  setRootVar("--muted", mutedColor);
-  setRootVar("--line", gridColor);
-  setRootVar("--accent", accentColor);
-  setRootVar("--accent-soft", rgba(accentColor, 0.12));
-  setRootVar("--canvas-bg", canvasBg);
-  document.querySelector('meta[name="theme-color"]').setAttribute("content", panelBg);
-  syncThemeInputs();
+function applyPlotThemePreset(name) {
+  const preset = PLOT_THEME_PRESETS[name] ?? DEFAULT_PLOT_THEME;
+  state.plotTheme = { ...preset };
+  applySeriesPalette(state.plotTheme.palette);
+  syncPlotThemeInputs();
+  renderAll();
 }
 
-function setThemePreset(name) {
-  const preset = THEME_PRESETS[name] ?? DEFAULT_THEME;
-  state.theme = { ...preset };
-  applyTheme();
-  drawPlot();
-}
-
-function updateThemeFromControls() {
-  state.theme = {
-    preset: themePresetSelect.value,
-    pageBg: pageBgInput.value,
-    panelBg: panelBgInput.value,
-    textColor: textColorInput.value,
-    mutedColor: mutedColorInput.value,
-    gridColor: gridColorInput.value,
-    accentColor: accentColorInput.value,
+function updatePlotThemeFromControls() {
+  state.plotTheme = {
+    preset: plotThemePresetSelect.value,
+    palette: seriesPaletteSelect.value,
     canvasBg: canvasBgInput.value,
-    axisTextColor: axisTextColorInput.value,
+    plotAreaBg: plotAreaBgInput.value,
     titleColor: titleColorInput.value,
+    axisTextColor: axisTextColorInput.value,
+    gridColor: gridColorInput.value,
+    borderColor: borderColorInput.value,
+    accentColor: accentColorInput.value,
     peakColor: peakColorInput.value,
-    lineWidth: Number(lineWidthInput.value) || DEFAULT_THEME.lineWidth,
-    gridWidth: Number(gridWidthInput.value) || DEFAULT_THEME.gridWidth,
-    fontScale: Number(fontScaleInput.value) || DEFAULT_THEME.fontScale,
+    lineWidth: Number(lineWidthInput.value) || DEFAULT_PLOT_THEME.lineWidth,
+    gridWidth: Number(gridWidthInput.value) || DEFAULT_PLOT_THEME.gridWidth,
+    fontScale: Number(fontScaleInput.value) || DEFAULT_PLOT_THEME.fontScale,
   };
-  applyTheme();
-  drawPlot();
+  applySeriesPalette(state.plotTheme.palette);
+  syncPlotThemeInputs();
+  renderAll();
 }
 
 function formatNumber(value) {
@@ -472,7 +555,7 @@ function drawLegend(datasets, x, y) {
     const itemY = y + index * 24;
     ctx.fillStyle = dataset.color;
     ctx.fillRect(x, itemY - 10, 18, 4);
-    ctx.fillStyle = state.theme.axisTextColor;
+    ctx.fillStyle = state.plotTheme.axisTextColor;
     ctx.fillText(dataset.fileName, x + 28, itemY);
   });
 }
@@ -500,27 +583,29 @@ function drawPlot() {
   const height = canvas.height;
   ctx.clearRect(0, 0, width, height);
 
-  ctx.fillStyle = state.theme.canvasBg;
+  ctx.fillStyle = state.plotTheme.canvasBg;
   ctx.fillRect(0, 0, width, height);
 
   const margin = { top: 90, right: 48, bottom: 85, left: 95 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
-  ctx.strokeStyle = state.theme.gridColor;
-  ctx.lineWidth = state.theme.gridWidth;
+  ctx.fillStyle = state.plotTheme.plotAreaBg;
+  ctx.fillRect(margin.left, margin.top, plotWidth, plotHeight);
+  ctx.strokeStyle = state.plotTheme.borderColor;
+  ctx.lineWidth = state.plotTheme.gridWidth;
   ctx.strokeRect(margin.left, margin.top, plotWidth, plotHeight);
 
-  ctx.fillStyle = state.theme.titleColor;
-  ctx.font = `700 ${Math.round(30 * state.theme.fontScale)}px Inter, sans-serif`;
+  ctx.fillStyle = state.plotTheme.titleColor;
+  ctx.font = `700 ${Math.round(30 * state.plotTheme.fontScale)}px Inter, sans-serif`;
   ctx.textAlign = "center";
   ctx.fillText(titleInput.value || "Spectrum", width / 2, 42);
 
   if (!allPoints.length) {
-    ctx.fillStyle = state.theme.mutedColor;
-    ctx.font = `500 ${Math.round(24 * state.theme.fontScale)}px Inter, sans-serif`;
+    ctx.fillStyle = state.plotTheme.axisTextColor;
+    ctx.font = `500 ${Math.round(24 * state.plotTheme.fontScale)}px Inter, sans-serif`;
     ctx.fillText("ファイルを読み込むとここにグラフが表示されます", width / 2, height / 2 - 10);
-    ctx.font = `500 ${Math.round(18 * state.theme.fontScale)}px Inter, sans-serif`;
+    ctx.font = `500 ${Math.round(18 * state.plotTheme.fontScale)}px Inter, sans-serif`;
     ctx.fillText(".txt / .csv / .dat 対応。左のサンプル追加でも試せます。", width / 2, height / 2 + 26);
     return;
   }
@@ -531,9 +616,10 @@ function drawPlot() {
 
   const xTicks = 6;
   const yTicks = 6;
-  ctx.font = `500 ${Math.round(18 * state.theme.fontScale)}px Inter, sans-serif`;
-  ctx.fillStyle = state.theme.axisTextColor;
-  ctx.strokeStyle = state.theme.gridColor;
+  ctx.font = `500 ${Math.round(18 * state.plotTheme.fontScale)}px Inter, sans-serif`;
+  ctx.fillStyle = state.plotTheme.axisTextColor;
+  ctx.strokeStyle = state.plotTheme.gridColor;
+  ctx.lineWidth = state.plotTheme.gridWidth;
 
   for (let i = 0; i <= xTicks; i += 1) {
     const t = i / xTicks;
@@ -565,7 +651,7 @@ function drawPlot() {
 
   datasets.forEach((dataset) => {
     ctx.strokeStyle = dataset.color;
-    ctx.lineWidth = state.theme.lineWidth;
+    ctx.lineWidth = state.plotTheme.lineWidth;
     ctx.beginPath();
     dataset.data.forEach((point, index) => {
       const px = mapX(point.x);
@@ -578,28 +664,36 @@ function drawPlot() {
     });
     ctx.stroke();
 
-    const peakPoints = getPeakPoints(dataset.data, [x0, x1]);
-    peakPoints.forEach((peakPoint) => {
-      ctx.fillStyle = state.theme.peakColor;
-      ctx.beginPath();
-      ctx.arc(mapX(peakPoint.x), mapY(peakPoint.y), 6, 0, Math.PI * 2);
-      ctx.fill();
-    });
-  });
+  const peakPoint = getPeakPoint(allPoints.filter((point) => point.x >= x0 && point.x <= x1));
+  if (peakPoint) {
+    const peakPx = mapX(peakPoint.x);
+    const peakPy = mapY(peakPoint.y);
+    ctx.strokeStyle = state.plotTheme.accentColor;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(peakPx, margin.top);
+    ctx.lineTo(peakPx, margin.top + plotHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = state.plotTheme.peakColor;
+    ctx.beginPath();
+    ctx.arc(peakPx, peakPy, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   drawLegend(datasets, margin.left, 68);
 
   if (state.interaction.dragStartX !== null && state.interaction.dragCurrentX !== null) {
     const left = Math.min(state.interaction.dragStartX, state.interaction.dragCurrentX);
     const widthRect = Math.abs(state.interaction.dragCurrentX - state.interaction.dragStartX);
-    ctx.fillStyle = rgba(state.theme.accentColor, 0.2);
+    ctx.fillStyle = rgba(state.plotTheme.accentColor, 0.2);
     ctx.fillRect(left, margin.top, widthRect, plotHeight);
-    ctx.strokeStyle = rgba(state.theme.accentColor, 0.9);
+    ctx.strokeStyle = rgba(state.plotTheme.accentColor, 0.9);
     ctx.strokeRect(left, margin.top, widthRect, plotHeight);
   }
 
-  ctx.fillStyle = state.theme.axisTextColor;
-  ctx.font = `600 ${Math.round(22 * state.theme.fontScale)}px Inter, sans-serif`;
+  ctx.fillStyle = state.plotTheme.axisTextColor;
+  ctx.font = `600 ${Math.round(22 * state.plotTheme.fontScale)}px Inter, sans-serif`;
   ctx.textAlign = "center";
   ctx.fillText(xLabelSelect.value, width / 2, height - 24);
 
@@ -647,7 +741,7 @@ function appendText(text, fileName) {
       id: crypto.randomUUID(),
       fileName,
       data,
-      color: SERIES_COLORS[state.datasets.length % SERIES_COLORS.length],
+      color: (SERIES_PALETTES[state.plotTheme.palette] ?? SERIES_PALETTES.default)[state.datasets.length % (SERIES_PALETTES[state.plotTheme.palette] ?? SERIES_PALETTES.default).length],
     },
   ];
   return true;
@@ -790,17 +884,17 @@ xDirectionSelect.addEventListener("change", (event) => {
   renderAll();
 });
 
-applyThemePresetBtn.addEventListener("click", () => {
-  setThemePreset(themePresetSelect.value);
+applyPlotThemePresetBtn.addEventListener("click", () => {
+  applyPlotThemePreset(plotThemePresetSelect.value);
 });
 
-resetThemeBtn.addEventListener("click", () => {
-  setThemePreset(DEFAULT_THEME.preset);
+resetPlotThemeBtn.addEventListener("click", () => {
+  applyPlotThemePreset(DEFAULT_PLOT_THEME.preset);
 });
 
-[themePresetSelect, pageBgInput, panelBgInput, textColorInput, mutedColorInput, gridColorInput, accentColorInput, canvasBgInput, axisTextColorInput, titleColorInput, peakColorInput, lineWidthInput, gridWidthInput, fontScaleInput].forEach((input) => {
-  input.addEventListener("input", updateThemeFromControls);
-  input.addEventListener("change", updateThemeFromControls);
+[plotThemePresetSelect, seriesPaletteSelect, canvasBgInput, plotAreaBgInput, titleColorInput, axisTextColorInput, gridColorInput, borderColorInput, accentColorInput, peakColorInput, lineWidthInput, gridWidthInput, fontScaleInput].forEach((input) => {
+  input.addEventListener("input", updatePlotThemeFromControls);
+  input.addEventListener("change", updatePlotThemeFromControls);
 });
 
 [titleInput, xLabelSelect, yLabelSelect].forEach((input) => {
@@ -855,5 +949,5 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-applyTheme();
+syncPlotThemeInputs();
 renderAll();
