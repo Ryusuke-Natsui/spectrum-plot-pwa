@@ -658,6 +658,11 @@ function drawPlot() {
     ctx.fillText(formatNumber(yValue), margin.left - 12, yPos + 6);
   }
 
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(margin.left, margin.top, plotWidth, plotHeight);
+  ctx.clip();
+
   datasets.forEach((dataset) => {
     ctx.strokeStyle = dataset.color;
     ctx.lineWidth = state.plotTheme.lineWidth;
@@ -690,6 +695,8 @@ function drawPlot() {
     ctx.arc(peakPx, peakPy, 6, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  ctx.restore();
 
   drawLegend(datasets, margin.left, 68);
 
